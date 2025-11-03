@@ -1,0 +1,72 @@
+# STAGE 1: Install all development dependencies
+FROM node:20-alpine AS development-dependencies-env
+RUN npm install -g pnpm
+WORKDIR /app
+
+# Copy all manifests
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+
+# Copy all package.json files
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/user-docs/package.json ./apps/user-docs/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/ui/package.json ./packages/ui/
+
+# Install all dependencies
+RUN pnpm install
+
+# STAGE 2: Install *only* production dependencies
+FROM node:20-alpine AS production-dependencies-env
+RUN npm install -g pnpm
+WORKDIR /app
+
+# Copy all manifests (same as before)
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/user-docs/package.json ./apps/user-docs/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/ui/package.json ./packages/ui/
+
+# Install *only* production dependencies
+RUN pnpm install --prod
+
+# STAGE 3: Build the application
+FROM node:20-alpine AS build-env
+RUN npm install -g pnpm
+WORKDIR /app
+
+# Copy the *full* dev node_modules from the first stage
+COPY --from=development-dependencies-env /app/node_modules ./node_modules
+
+# Copy all source code
+COPY . .
+
+# Run the build command for 'frontend'
+# Turborepo will build all its dependencies (like packages/ui)
+RUN pnpm run build --filter=frontend
+
+# STAGE 4: Final production image
+FROM node:20-alpine
+RUN npm install -g pnpm
+
+# Set final WORKDIR to the root, matching the node_modules location
+WORKDIR /app
+
+# Copy the *production-only* node_modules from the second stage
+COPY --from=production-dependencies-env /app/node_modules ./node_modules
+
+# Copy the built application from the build stage
+# The output is in /app/apps/frontend/dist
+COPY --from=build-env /app/apps/frontend/dist ./apps/frontend/dist
+
+# Copy the frontend's package.json and other root files needed
+COPY ./apps/frontend/package.json ./apps/frontend/
+COPY ./package.json .
+COPY ./pnpm-workspace.yaml .
+
+# Run the 'start' command for the 'frontend' app from the root
+# This allows it to find the root node_modules
+# (This assumes your frontend package.json has a "start" script like "vite preview")
+CMD ["pnpm", "--filter=frontend", "run", "start"]

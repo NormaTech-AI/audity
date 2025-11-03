@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # --- API GATEWAY ---
+  gateway:
+    image: nginx:1.25-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8080:8080" # Main API port
+    depends_on:
+      - tenant-service
+
+  # --- FRONTENDS ---
+  frontend:
+    build:
+      context: .
+      dockerfile: ./apps/frontend/Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/frontend:/app/apps/frontend
+      - ./packages/ui:/app/packages/ui
+      - /app/node_modules
+      - /app/apps/frontend/node_modules
+
+  user-docs:
+    build:
+      context: .
+      dockerfile: ./apps/user-docs/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/user-docs:/app/apps/user-docs
+      - ./packages/ui:/app/packages/ui
+      - /app/node_modules
+      - /app/apps/user-docs/node_modules
+
+  # --- BACKEND SERVICES ---
+  tenant-service:
+    build: ./services/tenant-service
+    volumes:
+      - ./services/tenant-service:/app
+    environment:
+      TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
+    depends_on:
+      - postgres
+      - rabbitmq
+    # No ports exposed to host. Only gateway talks to it.
+
+  # --- INFRASTRUCTURE ---
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tenant_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console
+    volumes:
+      - minio_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+
+volumes:
+  postgres_data:
+  minio_data:

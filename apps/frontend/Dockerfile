@@ -1,0 +1,36 @@
+# This Dockerfile is at apps/frontend/Dockerfile
+# BUT the build context (in docker-compose.yml) must be the root ('.')
+
+FROM node:20-alpine
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set WORKDIR to the root of the monorepo
+WORKDIR /app
+
+# 1. Copy all root manifests and configs
+COPY pnpm-lock.yaml .
+COPY pnpm-workspace.yaml .
+COPY package.json .
+COPY turbo.json .
+
+# 2. Copy all package.json files for all apps/packages
+COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/user-docs/package.json ./apps/user-docs/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/ui/package.json ./packages/ui/
+
+# 3. Install ALL dependencies from the root
+# This correctly builds the entire monorepo node_modules
+RUN pnpm install
+
+# 4. Copy all source code (so it exists for the first run)
+COPY . .
+
+# 5. Set the final WORKDIR to be this app's directory
+WORKDIR /app/apps/frontend
+
+EXPOSE 5173
+# Run the dev command for this specific app
+CMD ["pnpm", "run", "dev", "--host"]

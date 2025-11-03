@@ -1,0 +1,14 @@
+# Ignore all node_modules directories in all subfolders
+**/node_modules
+
+# Ignore build artifacts
+**/dist
+**/build
+**/.docusaurus
+
+# Ignore Go build artifacts
+**/tmp
+
+# Ignore Git and local config
+.git
+.DS_Store

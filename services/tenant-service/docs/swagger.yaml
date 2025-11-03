@@ -1,0 +1,9 @@
+basePath: /api/tenant     // This will be the gateway's path
+host: localhost:8080       // This will be the gateway's address
+info:
+  contact: {}
+  description: Handles client onboarding and authentication.
+  title: Tenant Service API
+  version: "1.0"
+paths: {}
+swagger: "2.0"

@@ -1,0 +1,322 @@
+package router
+
+import (
+	"github.com/NormaTech-AI/audity/packages/go/auth"
+	"github.com/NormaTech-AI/audity/packages/go/rbac"
+	"github.com/NormaTech-AI/audity/services/tenant-service/internal/config"
+	"github.com/NormaTech-AI/audity/services/tenant-service/internal/handler"
+	"github.com/NormaTech-AI/audity/services/tenant-service/internal/store"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger"
+	"go.uber.org/zap"
+)
+
+// SetupRoutes configures all routes for the application
+func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *store.Store, logger *zap.SugaredLogger) {
+	// Global middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// CORS middleware - allow requests from frontend
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.PATCH, echo.OPTIONS},
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, "X-Requested-With", "X-CSRF-Token"},
+		AllowCredentials: true,
+		MaxAge:           86400, // 24 hours
+	}))
+
+	e.Use(middleware.RequestID())
+
+	// Public endpoints (no auth required)
+	e.GET("/", h.RootHandler)
+	e.GET("/health", h.HealthCheck)
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
+	// API routes - all require authentication
+	api := e.Group("/api")
+	api.Use(auth.AuthMiddleware(cfg.Auth.JWTSecret, logger))
+
+	// Dashboard routes (protected)
+	tenant := api.Group("/tenant")
+	{
+		tenant.GET("/dashboard", h.GetTenantDashboard)
+		tenant.GET("/dashboard/stats", h.GetTenantDashboardStats)
+	}
+
+	// Client management routes (protected)
+	// clients := api.Group("/clients")
+	// {
+	// 	// Admin only - create clients
+	// 	clients.POST("",
+	// 		h.CreateClient,
+	// 		rbac.PermissionMiddleware(store, logger, "clients:create"),
+	// 	)
+
+	// 	// Admin and internal POC - list clients
+	// 	clients.GET("",
+	// 		h.ListClients,
+	// 		rbac.RequireAnyPermission(store, logger, "clients:list", "clients:read"),
+	// 	)
+
+	// 	// Anyone authenticated can view client details (filtered by their access)
+	// 	clients.GET("/:id",
+	// 		h.GetClient,
+	// 		rbac.PermissionMiddleware(store, logger, "clients:read"),
+	// 	)
+
+	// 	// TODO: Add update and delete endpoints with proper permissions
+	// 	clients.PUT("/:id", h.UpdateClient, rbac.PermissionMiddleware(store, logger, "clients:update"))
+	// 	// clients.DELETE("/:id", h.DeleteClient, rbac.PermissionMiddleware(store, logger, "clients:delete"))
+	// }
+
+	// Framework management routes (protected)
+	frameworks := api.Group("/frameworks")
+	{
+		// Admin only - create, update, delete frameworks
+		frameworks.POST("",
+			h.CreateFramework,
+			rbac.PermissionMiddleware(store, logger, "frameworks:create"),
+		)
+
+		frameworks.PUT("/:id",
+			h.UpdateFramework,
+			rbac.PermissionMiddleware(store, logger, "frameworks:update"),
+		)
+
+		frameworks.DELETE("/:id",
+			h.DeleteFramework,
+			rbac.PermissionMiddleware(store, logger, "frameworks:delete"),
+		)
+
+		// Anyone authenticated can list and view frameworks
+		frameworks.GET("",
+			h.ListFrameworks,
+			rbac.PermissionMiddleware(store, logger, "frameworks:list"),
+		)
+
+		frameworks.GET("/:id",
+			h.GetFramework,
+			rbac.PermissionMiddleware(store, logger, "frameworks:read"),
+		)
+
+		frameworks.GET("/:id/checklist",
+			h.GetFrameworkChecklist,
+			rbac.PermissionMiddleware(store, logger, "frameworks:read"),
+		)
+	}
+
+	// Audit management routes (protected, client-specific)
+	audits := api.Group("/clients/:clientId/audits")
+	{
+		// List audits for a client
+		audits.GET("",
+			h.ListClientAudits,
+			rbac.RequireAnyPermission(store, logger, "audits:list", "audits:read"),
+		)
+
+		// Get specific audit with questions
+		audits.GET("/:auditId",
+			h.GetAudit,
+			rbac.PermissionMiddleware(store, logger, "audits:read"),
+		)
+
+		// Update audit (assignment, status, due date)
+		audits.PATCH("/:auditId",
+			h.UpdateAudit,
+			rbac.PermissionMiddleware(store, logger, "audits:update"),
+		)
+	}
+
+	// Submission management routes (protected, client-specific)
+	submissions := api.Group("/clients/:clientId/submissions")
+	{
+		// Create or update draft submission
+		submissions.POST("",
+			h.CreateOrUpdateSubmission,
+			rbac.PermissionMiddleware(store, logger, "submissions:create"),
+		)
+
+		// Submit for review
+		submissions.POST("/:submissionId/submit",
+			h.SubmitForReview,
+			rbac.PermissionMiddleware(store, logger, "submissions:submit"),
+		)
+
+		// Review submission (approve/reject/refer)
+		submissions.POST("/:submissionId/review",
+			h.ReviewSubmission,
+			rbac.PermissionMiddleware(store, logger, "submissions:review"),
+		)
+
+		// List submissions by status
+		submissions.GET("",
+			h.ListSubmissionsByStatus,
+			rbac.PermissionMiddleware(store, logger, "submissions:list"),
+		)
+
+		// Get specific submission
+		submissions.GET("/:submissionId",
+			h.GetSubmission,
+			rbac.PermissionMiddleware(store, logger, "submissions:read"),
+		)
+	}
+
+	// Evidence management routes (protected, client-specific)
+	evidence := api.Group("/clients/:clientId/evidence")
+	{
+		// Upload evidence file
+		evidence.POST("/upload",
+			h.UploadEvidence,
+			rbac.PermissionMiddleware(store, logger, "evidence:upload"),
+		)
+
+		// Get presigned upload URL
+		evidence.GET("/upload-url",
+			h.GetPresignedUploadURL,
+			rbac.PermissionMiddleware(store, logger, "evidence:upload"),
+		)
+
+		// List evidence by submission
+		evidence.GET("/submissions/:submissionId",
+			h.ListEvidenceBySubmission,
+			rbac.PermissionMiddleware(store, logger, "evidence:list"),
+		)
+
+		// Get specific evidence with download URL
+		evidence.GET("/:evidenceId",
+			h.GetEvidence,
+			rbac.PermissionMiddleware(store, logger, "evidence:read"),
+		)
+
+		// Download evidence file directly
+		evidence.GET("/:evidenceId/download",
+			h.DownloadEvidence,
+			rbac.PermissionMiddleware(store, logger, "evidence:read"),
+		)
+
+		// Delete evidence (soft delete)
+		evidence.DELETE("/:evidenceId",
+			h.DeleteEvidence,
+			rbac.PermissionMiddleware(store, logger, "evidence:delete"),
+		)
+	}
+
+	// Comment management routes (protected, client-specific)
+	comments := api.Group("/clients/:clientId/comments")
+	{
+		// Create comment on submission
+		comments.POST("",
+			h.CreateComment,
+			rbac.PermissionMiddleware(store, logger, "comments:create"),
+		)
+
+		// List comments by submission
+		comments.GET("/submissions/:submissionId",
+			h.ListCommentsBySubmission,
+			rbac.PermissionMiddleware(store, logger, "comments:list"),
+		)
+
+		// Get specific comment
+		comments.GET("/:commentId",
+			h.GetComment,
+			rbac.PermissionMiddleware(store, logger, "comments:read"),
+		)
+
+		// Update comment
+		comments.PUT("/:commentId",
+			h.UpdateComment,
+			rbac.PermissionMiddleware(store, logger, "comments:update"),
+		)
+
+		// Delete comment
+		comments.DELETE("/:commentId",
+			h.DeleteComment,
+			rbac.PermissionMiddleware(store, logger, "comments:delete"),
+		)
+	}
+
+	// Activity log routes (protected, client-specific)
+	activity := api.Group("/clients/:clientId/activity")
+	{
+		// Create activity log entry
+		activity.POST("",
+			h.CreateActivityLog,
+			rbac.PermissionMiddleware(store, logger, "activity:create"),
+		)
+
+		// List all activity logs with pagination
+		activity.GET("",
+			h.ListActivityLogs,
+			rbac.PermissionMiddleware(store, logger, "activity:list"),
+		)
+
+		// Get recent activity
+		activity.GET("/recent",
+			h.GetRecentActivity,
+			rbac.PermissionMiddleware(store, logger, "activity:list"),
+		)
+
+		// List activity by user
+		activity.GET("/users/:userId",
+			h.ListActivityLogsByUser,
+			rbac.PermissionMiddleware(store, logger, "activity:list"),
+		)
+
+		// List activity by entity
+		activity.GET("/entities",
+			h.ListActivityLogsByEntity,
+			rbac.PermissionMiddleware(store, logger, "activity:list"),
+		)
+	}
+
+	// Report generation routes (protected, client-specific)
+	reports := api.Group("/clients/:clientId/reports")
+	{
+		// Generate new report for audit
+		reports.POST("/audits/:auditId/generate",
+			h.GenerateReport,
+			rbac.PermissionMiddleware(store, logger, "reports:create"),
+		)
+
+		// Get report by ID
+		reports.GET("/:reportId",
+			h.GetReport,
+			rbac.PermissionMiddleware(store, logger, "reports:read"),
+		)
+
+		// Get report by audit ID
+		reports.GET("/audits/:auditId",
+			h.GetReportByAudit,
+			rbac.PermissionMiddleware(store, logger, "reports:read"),
+		)
+
+		// List reports by status
+		reports.GET("",
+			h.ListReportsByStatus,
+			rbac.PermissionMiddleware(store, logger, "reports:list"),
+		)
+
+		// Sign report
+		reports.POST("/:reportId/sign",
+			h.SignReport,
+			rbac.PermissionMiddleware(store, logger, "reports:sign"),
+		)
+
+		// Mark report as delivered
+		reports.POST("/:reportId/deliver",
+			h.MarkReportDelivered,
+			rbac.PermissionMiddleware(store, logger, "reports:deliver"),
+		)
+
+		// Download report file
+		reports.GET("/:reportId/download",
+			h.DownloadReport,
+			rbac.PermissionMiddleware(store, logger, "reports:read"),
+		)
+	}
+
+	// TODO: Add more route groups with RBAC
+	// users := api.Group("/users")
+}

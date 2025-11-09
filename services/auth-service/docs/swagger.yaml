@@ -1,0 +1,212 @@
+basePath: /
+definitions:
+  handler.CallbackResponse:
+    properties:
+      expires_at:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/handler.UserInfo'
+    type: object
+  handler.HealthResponse:
+    properties:
+      database:
+        type: string
+      service:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.LoginResponse:
+    properties:
+      auth_url:
+        type: string
+      provider:
+        type: string
+    type: object
+  handler.RefreshRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  handler.UserInfo:
+    properties:
+      client_id:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: TPRM Audit Platform - Authentication Service
+  title: Auth Service API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Service information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Root endpoint
+      tags:
+      - info
+  /auth/callback:
+    get:
+      description: Handle OAuth callback and issue JWT token
+      parameters:
+      - description: Authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CallbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: OAuth callback handler
+      tags:
+      - auth
+  /auth/login/{provider}:
+    get:
+      consumes:
+      - application/json
+      description: Get OAuth URL for Google or Microsoft login
+      parameters:
+      - description: OAuth provider (google or microsoft)
+        in: path
+        name: provider
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Initiate OAuth login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Logout user (client should discard token)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new JWT token using an existing valid token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.CallbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh JWT token
+      tags:
+      - auth
+  /auth/validate:
+    get:
+      description: Validate a JWT token and return user info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserInfo'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validate JWT token
+      tags:
+      - auth
+  /health:
+    get:
+      description: Check if the service and database are healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check endpoint
+      tags:
+      - health
+swagger: "2.0"

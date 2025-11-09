@@ -1,0 +1,101 @@
+{
+  "framework_name": "NCDEX",
+  "version": "1.0",
+  "sections": [
+    {
+      "name": "Compliance Framework",
+      "questions": [
+        {
+          "number": "1.1",
+          "text": "Is there a documented compliance program aligned with NCDEX requirements?",
+          "type": "yes_no",
+          "help_text": "Program should address all NCDEX regulatory requirements.",
+          "is_mandatory": true
+        },
+        {
+          "number": "1.2",
+          "text": "Is a compliance officer designated for NCDEX matters?",
+          "type": "yes_no",
+          "help_text": "Officer should have adequate authority and resources.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Trading System Security",
+      "questions": [
+        {
+          "number": "2.1",
+          "text": "Are trading systems protected against unauthorized access?",
+          "type": "yes_no",
+          "help_text": "Access controls should include role-based permissions and MFA.",
+          "is_mandatory": true
+        },
+        {
+          "number": "2.2",
+          "text": "Is trading activity monitored and logged in real-time?",
+          "type": "yes_no",
+          "help_text": "Logs should be retained for audit purposes as per regulations.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Operational Risk Management",
+      "questions": [
+        {
+          "number": "3.1",
+          "text": "Are operational risks identified and documented?",
+          "type": "yes_no",
+          "help_text": "Documentation should include risk mitigation strategies.",
+          "is_mandatory": true
+        },
+        {
+          "number": "3.2",
+          "text": "Is there a Business Continuity Plan specific to trading operations?",
+          "type": "yes_no",
+          "help_text": "Plan should ensure minimal disruption to trading activities.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Data Privacy and Protection",
+      "questions": [
+        {
+          "number": "4.1",
+          "text": "Is customer data protected in accordance with privacy regulations?",
+          "type": "yes_no",
+          "help_text": "Protection includes encryption and access controls.",
+          "is_mandatory": true
+        },
+        {
+          "number": "4.2",
+          "text": "Are data retention policies aligned with regulatory requirements?",
+          "type": "yes_no",
+          "help_text": "Retention periods should comply with NCDEX guidelines.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Audit and Reporting",
+      "questions": [
+        {
+          "number": "5.1",
+          "text": "Are internal audits conducted at least quarterly?",
+          "type": "yes_no",
+          "help_text": "Audits should cover all critical systems and processes.",
+          "is_mandatory": true
+        },
+        {
+          "number": "5.2",
+          "text": "Are audit findings reported to management and NCDEX as required?",
+          "type": "yes_no",
+          "help_text": "Reporting should be timely and comprehensive.",
+          "is_mandatory": true
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,8 @@ services:
     ports:
       - "8080:8080" # Main API port
     depends_on:
+      - auth-service
+      - client-service
       - tenant-service
 
   # --- FRONTENDS ---
@@ -21,8 +23,10 @@ services:
     volumes:
       - ./apps/frontend:/app/apps/frontend
       - ./packages/ui:/app/packages/ui
-      - /app/node_modules
-      - /app/apps/frontend/node_modules
+      - frontend_root_node_modules:/app/node_modules
+      - frontend_app_node_modules:/app/apps/frontend/node_modules
+      - frontend_pnpm_store:/app/.pnpm-store
+      - frontend_react_router:/app/apps/frontend/.react-router
 
   user-docs:
     build:
@@ -33,19 +37,63 @@ services:
     volumes:
       - ./apps/user-docs:/app/apps/user-docs
       - ./packages/ui:/app/packages/ui
-      - /app/node_modules
-      - /app/apps/user-docs/node_modules
+      - user_docs_root_node_modules:/app/node_modules
+      - user_docs_app_node_modules:/app/apps/user-docs/node_modules
+      - user_docs_pnpm_store:/app/.pnpm-store
+      - user_docs_react_router:/app/apps/user-docs/.react-router
 
   # --- BACKEND SERVICES ---
-  tenant-service:
-    build: ./services/tenant-service
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
+      target: development
+    working_dir: /app/services/auth-service
     volumes:
-      - ./services/tenant-service:/app
+      - ./go.work:/app/go.work
+      - ./packages:/app/packages
+      - ./services/auth-service:/app/services/auth-service
+    environment:
+      AUDITY_AUTH_DATABASE_TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
+    depends_on:
+      - postgres
+    # No ports exposed to host. Only gateway talks to it.
+
+  tenant-service:
+    build:
+      context: .
+      dockerfile: ./services/tenant-service/Dockerfile
+      target: development
+    working_dir: /app/services/tenant-service
+    volumes:
+      - ./go.work:/app/go.work
+      - ./packages:/app/packages
+      - ./services/tenant-service:/app/services/tenant-service
     environment:
       TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
     depends_on:
       - postgres
       - rabbitmq
+    # No ports exposed to host. Only gateway talks to it.
+
+  client-service:
+    build:
+      context: .
+      dockerfile: ./services/client-service/Dockerfile
+      target: development
+    working_dir: /app/services/client-service
+    volumes:
+      - ./go.work:/app/go.work
+      - ./go.work.sum:/app/go.work.sum
+      - ./packages:/app/packages
+      - ./services/auth-service:/app/services/auth-service
+      - ./services/tenant-service:/app/services/tenant-service
+      - ./services/client-service:/app/services/client-service
+    environment:
+      CLIENT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
+    depends_on:
+      - postgres
+      - minio
     # No ports exposed to host. Only gateway talks to it.
 
   # --- INFRASTRUCTURE ---
@@ -81,3 +129,13 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  # Frontend node_modules volumes (isolated from local)
+  frontend_root_node_modules:
+  frontend_app_node_modules:
+  frontend_pnpm_store:
+  frontend_react_router:
+  # User-docs node_modules volumes (isolated from local)
+  user_docs_root_node_modules:
+  user_docs_app_node_modules:
+  user_docs_pnpm_store:
+  user_docs_react_router:

@@ -1,21 +1,53 @@
-FROM golang:1.25-alpine
+# --- Stage 1: Build ---
+FROM golang:1.25-alpine AS builder
+
 WORKDIR /app
 
-# Install air
-RUN go install github.com/air-verse/air@latest
-# Install swag
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+# Copy workspace files (needed for shared packages)
+COPY go.work* ./
+COPY packages/ ./packages/
 
-COPY go.mod go.sum ./
+# Copy service files
+COPY services/tenant-service/go.mod services/tenant-service/go.sum* ./services/tenant-service/
+WORKDIR /app/services/tenant-service
 RUN go mod download
 
-COPY . .
+# Copy service source
+COPY services/tenant-service/ ./
 
-# Run Swag once to generate initial docs
+# Install swag for docs generation
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN swag init
 
-# Port this service listens on *internally*
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o tenant-service ./main.go
+
+# --- Stage 2: Development (with hot reload) ---
+FROM golang:1.25-alpine AS development
+
+WORKDIR /app
+
+# Install air and swag
+RUN go install github.com/air-verse/air@latest
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# This stage expects volumes to be mounted
+CMD ["air"]
+
+# --- Stage 3: Production ---
+FROM alpine:latest AS production
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/services/tenant-service/tenant-service .
+
+# Copy config and docs
+COPY services/tenant-service/config.yaml .
+COPY --from=builder /app/services/tenant-service/docs ./docs
+
+# Expose port
 EXPOSE 8081
 
-# Run air
-CMD ["air"]
+# Run
+CMD ["./tenant-service"]

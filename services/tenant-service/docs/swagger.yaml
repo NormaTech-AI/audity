@@ -1,9 +1,160 @@
-basePath: /api/tenant     // This will be the gateway's path
-host: localhost:8080       // This will be the gateway's address
+basePath: /
+definitions:
+  handler.ClientResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      poc_email:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handler.CreateClientRequest:
+    properties:
+      due_date:
+        type: string
+      frameworks:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      name:
+        type: string
+      poc_email:
+        type: string
+    required:
+    - due_date
+    - frameworks
+    - name
+    - poc_email
+    type: object
+  handler.HealthResponse:
+    properties:
+      database:
+        type: string
+      service:
+        type: string
+      status:
+        type: string
+    type: object
+host: localhost:8081
 info:
   contact: {}
-  description: Handles client onboarding and authentication.
+  description: TPRM Audit Platform - Tenant Management Service
   title: Tenant Service API
   version: "1.0"
-paths: {}
+paths:
+  /:
+    get:
+      description: Service information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Root endpoint
+      tags:
+      - info
+  /api/clients:
+    get:
+      description: Get a list of all clients
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.ClientResponse'
+            type: array
+      summary: List all clients
+      tags:
+      - clients
+    post:
+      consumes:
+      - application/json
+      description: Onboard a new client with isolated database and MinIO bucket
+      parameters:
+      - description: Client details
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateClientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.ClientResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new client
+      tags:
+      - clients
+  /api/clients/{id}:
+    get:
+      description: Get detailed information about a specific client
+      parameters:
+      - description: Client ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ClientResponse'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get client by ID
+      tags:
+      - clients
+  /health:
+    get:
+      description: Check if the service and database are healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check endpoint
+      tags:
+      - health
 swagger: "2.0"

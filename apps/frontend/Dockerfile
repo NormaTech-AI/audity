@@ -1,7 +1,7 @@
 # This Dockerfile is at apps/frontend/Dockerfile
 # BUT the build context (in docker-compose.yml) must be the root ('.')
 
-FROM node:20-alpine
+FROM node:22-alpine
 # Install pnpm
 RUN npm install -g pnpm
 

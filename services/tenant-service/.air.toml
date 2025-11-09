@@ -5,7 +5,10 @@ tmp_dir = "tmp"
 cmd = "go build -o ./tmp/main ."
 bin = "./tmp/main"
 # Run swag init before building
-pre_cmd = ["swag init"]
+# pre_cmd = ["swag init"]
+delay = 2000
+log = "tmp/air.log"
 
 [watch]
 includes = ["*.go"]
+exclude_dir = ["/app/tmp", "docs"]

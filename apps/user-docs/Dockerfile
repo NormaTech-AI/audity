@@ -1,7 +1,7 @@
 # This Dockerfile is at apps/user-docs/Dockerfile
 # BUT the build context is the root ('.')
 
-FROM node:20-alpine
+FROM node:22-alpine
 # Install pnpm
 RUN npm install -g pnpm
 

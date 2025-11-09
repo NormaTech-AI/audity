@@ -1,0 +1,183 @@
+{
+  "framework_name": "NSE",
+  "version": "1.0",
+  "sections": [
+    {
+      "name": "Information Security Policy",
+      "questions": [
+        {
+          "number": "1.1",
+          "text": "Does the organization have a documented and approved Information Security Policy?",
+          "type": "yes_no",
+          "help_text": "The policy should be documented, approved by management, and communicated to all employees.",
+          "is_mandatory": true
+        },
+        {
+          "number": "1.2",
+          "text": "Is the Information Security Policy reviewed and updated at least annually?",
+          "type": "yes_no",
+          "help_text": "Regular review ensures the policy remains current with organizational changes and threat landscape.",
+          "is_mandatory": true
+        },
+        {
+          "number": "1.3",
+          "text": "Are all employees and contractors required to acknowledge the Information Security Policy?",
+          "type": "yes_no",
+          "help_text": "Acknowledgment ensures awareness and commitment to security policies.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Access Control",
+      "questions": [
+        {
+          "number": "2.1",
+          "text": "Is there a formal user access provisioning and de-provisioning process?",
+          "type": "yes_no",
+          "help_text": "Process should include approval workflows for granting and revoking access.",
+          "is_mandatory": true
+        },
+        {
+          "number": "2.2",
+          "text": "Are user access rights reviewed at least quarterly?",
+          "type": "yes_no",
+          "help_text": "Regular reviews help identify and remove unnecessary access privileges.",
+          "is_mandatory": true
+        },
+        {
+          "number": "2.3",
+          "text": "Is multi-factor authentication (MFA) implemented for privileged accounts?",
+          "type": "yes_no",
+          "help_text": "MFA adds an additional layer of security for sensitive accounts.",
+          "is_mandatory": true
+        },
+        {
+          "number": "2.4",
+          "text": "Are password policies enforced (complexity, expiration, reuse)?",
+          "type": "yes_no",
+          "help_text": "Strong password policies reduce the risk of unauthorized access.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Network Security",
+      "questions": [
+        {
+          "number": "3.1",
+          "text": "Are firewalls deployed and configured to protect the network perimeter?",
+          "type": "yes_no",
+          "help_text": "Firewalls should be configured with deny-all rules and specific allow rules.",
+          "is_mandatory": true
+        },
+        {
+          "number": "3.2",
+          "text": "Is network segmentation implemented to isolate critical systems?",
+          "type": "yes_no",
+          "help_text": "Segmentation limits the impact of security breaches.",
+          "is_mandatory": true
+        },
+        {
+          "number": "3.3",
+          "text": "Are intrusion detection/prevention systems (IDS/IPS) deployed?",
+          "type": "yes_no",
+          "help_text": "IDS/IPS help detect and prevent malicious network activity.",
+          "is_mandatory": true
+        },
+        {
+          "number": "3.4",
+          "text": "Is network traffic monitored and logged for security events?",
+          "type": "yes_no",
+          "help_text": "Monitoring helps identify potential security incidents.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Data Protection",
+      "questions": [
+        {
+          "number": "4.1",
+          "text": "Is sensitive data encrypted at rest and in transit?",
+          "type": "yes_no",
+          "help_text": "Encryption protects data from unauthorized access.",
+          "is_mandatory": true
+        },
+        {
+          "number": "4.2",
+          "text": "Are regular backups performed for critical data?",
+          "type": "yes_no",
+          "help_text": "Backups ensure data availability in case of failure or incident.",
+          "is_mandatory": true
+        },
+        {
+          "number": "4.3",
+          "text": "Are backup restoration procedures tested at least quarterly?",
+          "type": "yes_no",
+          "help_text": "Testing ensures backups are functional when needed.",
+          "is_mandatory": true
+        },
+        {
+          "number": "4.4",
+          "text": "Is there a data classification policy in place?",
+          "type": "yes_no",
+          "help_text": "Classification helps apply appropriate security controls.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Incident Management",
+      "questions": [
+        {
+          "number": "5.1",
+          "text": "Is there a documented incident response plan?",
+          "type": "yes_no",
+          "help_text": "The plan should define roles, procedures, and escalation paths.",
+          "is_mandatory": true
+        },
+        {
+          "number": "5.2",
+          "text": "Are security incidents logged and tracked?",
+          "type": "yes_no",
+          "help_text": "Tracking helps identify patterns and improve security posture.",
+          "is_mandatory": true
+        },
+        {
+          "number": "5.3",
+          "text": "Is the incident response plan tested at least annually?",
+          "type": "yes_no",
+          "help_text": "Testing ensures the plan is effective and team members are prepared.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Business Continuity",
+      "questions": [
+        {
+          "number": "6.1",
+          "text": "Is there a documented Business Continuity Plan (BCP)?",
+          "type": "yes_no",
+          "help_text": "BCP ensures critical operations can continue during disruptions.",
+          "is_mandatory": true
+        },
+        {
+          "number": "6.2",
+          "text": "Is the BCP tested at least annually?",
+          "type": "yes_no",
+          "help_text": "Testing validates the plan's effectiveness.",
+          "is_mandatory": true
+        },
+        {
+          "number": "6.3",
+          "text": "Are Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO) defined for critical systems?",
+          "type": "yes_no",
+          "help_text": "RTO and RPO help prioritize recovery efforts.",
+          "is_mandatory": true
+        }
+      ]
+    }
+  ]
+}

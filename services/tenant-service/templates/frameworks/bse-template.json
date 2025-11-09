@@ -1,0 +1,101 @@
+{
+  "framework_name": "BSE",
+  "version": "1.0",
+  "sections": [
+    {
+      "name": "Information Security Governance",
+      "questions": [
+        {
+          "number": "1.1",
+          "text": "Is there a Board-approved Information Security Policy?",
+          "type": "yes_no",
+          "help_text": "Policy should be approved at Board level and reviewed annually.",
+          "is_mandatory": true
+        },
+        {
+          "number": "1.2",
+          "text": "Has a Chief Information Security Officer (CISO) been appointed?",
+          "type": "yes_no",
+          "help_text": "CISO should report directly to senior management.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Risk Management",
+      "questions": [
+        {
+          "number": "2.1",
+          "text": "Is an Information Security Risk Assessment conducted annually?",
+          "type": "yes_no",
+          "help_text": "Assessment should cover all critical assets and systems.",
+          "is_mandatory": true
+        },
+        {
+          "number": "2.2",
+          "text": "Are identified risks documented in a Risk Register?",
+          "type": "yes_no",
+          "help_text": "Risk register should include risk treatment plans.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Physical and Environmental Security",
+      "questions": [
+        {
+          "number": "3.1",
+          "text": "Are data centers protected by physical access controls?",
+          "type": "yes_no",
+          "help_text": "Controls include biometric access, CCTV, and security personnel.",
+          "is_mandatory": true
+        },
+        {
+          "number": "3.2",
+          "text": "Are environmental controls (fire, temperature, humidity) in place?",
+          "type": "yes_no",
+          "help_text": "Includes fire suppression systems and environmental monitoring.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "System and Network Security",
+      "questions": [
+        {
+          "number": "4.1",
+          "text": "Are critical systems protected by network segregation?",
+          "type": "yes_no",
+          "help_text": "Production, development, and DMZ networks should be segregated.",
+          "is_mandatory": true
+        },
+        {
+          "number": "4.2",
+          "text": "Is antivirus software deployed across all endpoints?",
+          "type": "yes_no",
+          "help_text": "Antivirus definitions should be updated daily.",
+          "is_mandatory": true
+        }
+      ]
+    },
+    {
+      "name": "Data Backup and Recovery",
+      "questions": [
+        {
+          "number": "5.1",
+          "text": "Are daily backups taken for critical data?",
+          "type": "yes_no",
+          "help_text": "Backups should be stored at an offsite location.",
+          "is_mandatory": true
+        },
+        {
+          "number": "5.2",
+          "text": "Are disaster recovery drills conducted at least annually?",
+          "type": "yes_no",
+          "help_text": "Drills should test full recovery of critical systems.",
+          "is_mandatory": true
+        }
+      ]
+    }
+  ]
+}

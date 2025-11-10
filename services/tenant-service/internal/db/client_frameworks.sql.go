@@ -64,24 +64,21 @@ SELECT
     cf.status,
     cf.created_at,
     cf.updated_at,
-    c.name as client_name,
-    f.name as framework_name
+    c.name as client_name
 FROM client_frameworks cf
 JOIN clients c ON cf.client_id = c.id
-JOIN compliance_frameworks f ON cf.framework_id = f.id
 WHERE cf.id = $1 LIMIT 1
 `
 
 type GetClientFrameworkRow struct {
-	ID            uuid.UUID           `json:"id"`
-	ClientID      uuid.UUID           `json:"client_id"`
-	FrameworkID   uuid.UUID           `json:"framework_id"`
-	DueDate       pgtype.Timestamptz  `json:"due_date"`
-	Status        NullAuditStatusEnum `json:"status"`
-	CreatedAt     pgtype.Timestamptz  `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz  `json:"updated_at"`
-	ClientName    string              `json:"client_name"`
-	FrameworkName string              `json:"framework_name"`
+	ID          uuid.UUID           `json:"id"`
+	ClientID    uuid.UUID           `json:"client_id"`
+	FrameworkID uuid.UUID           `json:"framework_id"`
+	DueDate     pgtype.Timestamptz  `json:"due_date"`
+	Status      NullAuditStatusEnum `json:"status"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	ClientName  string              `json:"client_name"`
 }
 
 func (q *Queries) GetClientFramework(ctx context.Context, id uuid.UUID) (GetClientFrameworkRow, error) {
@@ -96,7 +93,6 @@ func (q *Queries) GetClientFramework(ctx context.Context, id uuid.UUID) (GetClie
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ClientName,
-		&i.FrameworkName,
 	)
 	return i, err
 }
@@ -110,25 +106,22 @@ SELECT
     cf.status,
     cf.created_at,
     cf.updated_at,
-    c.name as client_name,
-    f.name as framework_name
+    c.name as client_name
 FROM client_frameworks cf
 JOIN clients c ON cf.client_id = c.id
-JOIN compliance_frameworks f ON cf.framework_id = f.id
 WHERE cf.client_id = $1
 ORDER BY cf.created_at DESC
 `
 
 type ListClientFrameworksRow struct {
-	ID            uuid.UUID           `json:"id"`
-	ClientID      uuid.UUID           `json:"client_id"`
-	FrameworkID   uuid.UUID           `json:"framework_id"`
-	DueDate       pgtype.Timestamptz  `json:"due_date"`
-	Status        NullAuditStatusEnum `json:"status"`
-	CreatedAt     pgtype.Timestamptz  `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz  `json:"updated_at"`
-	ClientName    string              `json:"client_name"`
-	FrameworkName string              `json:"framework_name"`
+	ID          uuid.UUID           `json:"id"`
+	ClientID    uuid.UUID           `json:"client_id"`
+	FrameworkID uuid.UUID           `json:"framework_id"`
+	DueDate     pgtype.Timestamptz  `json:"due_date"`
+	Status      NullAuditStatusEnum `json:"status"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	ClientName  string              `json:"client_name"`
 }
 
 func (q *Queries) ListClientFrameworks(ctx context.Context, clientID uuid.UUID) ([]ListClientFrameworksRow, error) {
@@ -149,7 +142,6 @@ func (q *Queries) ListClientFrameworks(ctx context.Context, clientID uuid.UUID) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ClientName,
-			&i.FrameworkName,
 		); err != nil {
 			return nil, err
 		}
@@ -170,25 +162,22 @@ SELECT
     cf.status,
     cf.created_at,
     cf.updated_at,
-    c.name as client_name,
-    f.name as framework_name
+    c.name as client_name
 FROM client_frameworks cf
 JOIN clients c ON cf.client_id = c.id
-JOIN compliance_frameworks f ON cf.framework_id = f.id
 WHERE cf.status = $1
 ORDER BY cf.due_date ASC
 `
 
 type ListFrameworksByStatusRow struct {
-	ID            uuid.UUID           `json:"id"`
-	ClientID      uuid.UUID           `json:"client_id"`
-	FrameworkID   uuid.UUID           `json:"framework_id"`
-	DueDate       pgtype.Timestamptz  `json:"due_date"`
-	Status        NullAuditStatusEnum `json:"status"`
-	CreatedAt     pgtype.Timestamptz  `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz  `json:"updated_at"`
-	ClientName    string              `json:"client_name"`
-	FrameworkName string              `json:"framework_name"`
+	ID          uuid.UUID           `json:"id"`
+	ClientID    uuid.UUID           `json:"client_id"`
+	FrameworkID uuid.UUID           `json:"framework_id"`
+	DueDate     pgtype.Timestamptz  `json:"due_date"`
+	Status      NullAuditStatusEnum `json:"status"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	ClientName  string              `json:"client_name"`
 }
 
 func (q *Queries) ListFrameworksByStatus(ctx context.Context, status NullAuditStatusEnum) ([]ListFrameworksByStatusRow, error) {
@@ -209,7 +198,6 @@ func (q *Queries) ListFrameworksByStatus(ctx context.Context, status NullAuditSt
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ClientName,
-			&i.FrameworkName,
 		); err != nil {
 			return nil, err
 		}

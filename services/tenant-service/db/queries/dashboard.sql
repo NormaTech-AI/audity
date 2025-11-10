@@ -1,6 +1,3 @@
--- name: CountFrameworks :one
-SELECT COUNT(*) FROM compliance_frameworks;
-
 -- name: CountTotalUsers :one
 SELECT COUNT(*) FROM users;
 

@@ -42,24 +42,12 @@ CREATE TABLE client_buckets (
 
 CREATE INDEX idx_client_buckets_client_id ON client_buckets(client_id);
 
--- Compliance frameworks (NSE, BSE, NCDEX, etc.)
-CREATE TABLE compliance_frameworks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT,
-    checklist_json JSONB NOT NULL, -- Stores questions and structure
-    version VARCHAR(50) DEFAULT '1.0',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_compliance_frameworks_name ON compliance_frameworks(name);
-
 -- Client frameworks (which frameworks apply to which client)
+-- framework_id references frameworks in the framework-service
 CREATE TABLE client_frameworks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-    framework_id UUID NOT NULL REFERENCES compliance_frameworks(id) ON DELETE CASCADE,
+    framework_id UUID NOT NULL, -- References framework in framework-service
     due_date TIMESTAMP WITH TIME ZONE NOT NULL,
     status audit_status_enum DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -151,9 +139,6 @@ $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
 CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_compliance_frameworks_updated_at BEFORE UPDATE ON compliance_frameworks
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_client_frameworks_updated_at BEFORE UPDATE ON client_frameworks

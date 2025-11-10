@@ -12,85 +12,91 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type UserRoleEnum string
+type UserDesignationEnum string
 
 const (
-	UserRoleEnumNishajAdmin UserRoleEnum = "nishaj_admin"
-	UserRoleEnumAuditor     UserRoleEnum = "auditor"
-	UserRoleEnumTeamMember  UserRoleEnum = "team_member"
-	UserRoleEnumPocInternal UserRoleEnum = "poc_internal"
-	UserRoleEnumPocClient   UserRoleEnum = "poc_client"
-	UserRoleEnumStakeholder UserRoleEnum = "stakeholder"
+	UserDesignationEnumNishajAdmin UserDesignationEnum = "nishaj_admin"
+	UserDesignationEnumAuditor     UserDesignationEnum = "auditor"
+	UserDesignationEnumTeamMember  UserDesignationEnum = "team_member"
+	UserDesignationEnumPocInternal UserDesignationEnum = "poc_internal"
+	UserDesignationEnumPocClient   UserDesignationEnum = "poc_client"
+	UserDesignationEnumStakeholder UserDesignationEnum = "stakeholder"
 )
 
-func (e *UserRoleEnum) Scan(src interface{}) error {
+func (e *UserDesignationEnum) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = UserRoleEnum(s)
+		*e = UserDesignationEnum(s)
 	case string:
-		*e = UserRoleEnum(s)
+		*e = UserDesignationEnum(s)
 	default:
-		return fmt.Errorf("unsupported scan type for UserRoleEnum: %T", src)
+		return fmt.Errorf("unsupported scan type for UserDesignationEnum: %T", src)
 	}
 	return nil
 }
 
-type NullUserRoleEnum struct {
-	UserRoleEnum UserRoleEnum `json:"user_role_enum"`
-	Valid        bool         `json:"valid"` // Valid is true if UserRoleEnum is not NULL
+type NullUserDesignationEnum struct {
+	UserDesignationEnum UserDesignationEnum `json:"user_designation_enum"`
+	Valid               bool                `json:"valid"` // Valid is true if UserDesignationEnum is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullUserRoleEnum) Scan(value interface{}) error {
+func (ns *NullUserDesignationEnum) Scan(value interface{}) error {
 	if value == nil {
-		ns.UserRoleEnum, ns.Valid = "", false
+		ns.UserDesignationEnum, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.UserRoleEnum.Scan(value)
+	return ns.UserDesignationEnum.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullUserRoleEnum) Value() (driver.Value, error) {
+func (ns NullUserDesignationEnum) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.UserRoleEnum), nil
+	return string(ns.UserDesignationEnum), nil
 }
 
-func (e UserRoleEnum) Valid() bool {
+func (e UserDesignationEnum) Valid() bool {
 	switch e {
-	case UserRoleEnumNishajAdmin,
-		UserRoleEnumAuditor,
-		UserRoleEnumTeamMember,
-		UserRoleEnumPocInternal,
-		UserRoleEnumPocClient,
-		UserRoleEnumStakeholder:
+	case UserDesignationEnumNishajAdmin,
+		UserDesignationEnumAuditor,
+		UserDesignationEnumTeamMember,
+		UserDesignationEnumPocInternal,
+		UserDesignationEnumPocClient,
+		UserDesignationEnumStakeholder:
 		return true
 	}
 	return false
 }
 
-func AllUserRoleEnumValues() []UserRoleEnum {
-	return []UserRoleEnum{
-		UserRoleEnumNishajAdmin,
-		UserRoleEnumAuditor,
-		UserRoleEnumTeamMember,
-		UserRoleEnumPocInternal,
-		UserRoleEnumPocClient,
-		UserRoleEnumStakeholder,
+func AllUserDesignationEnumValues() []UserDesignationEnum {
+	return []UserDesignationEnum{
+		UserDesignationEnumNishajAdmin,
+		UserDesignationEnumAuditor,
+		UserDesignationEnumTeamMember,
+		UserDesignationEnumPocInternal,
+		UserDesignationEnumPocClient,
+		UserDesignationEnumStakeholder,
 	}
 }
 
+type Client struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	EmailDomain *string   `json:"email_domain"`
+}
+
 type User struct {
-	ID           uuid.UUID          `json:"id"`
-	Email        string             `json:"email"`
-	Name         string             `json:"name"`
-	OidcProvider string             `json:"oidc_provider"`
-	OidcSub      string             `json:"oidc_sub"`
-	Role         UserRoleEnum       `json:"role"`
-	ClientID     pgtype.UUID        `json:"client_id"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	LastLogin    pgtype.Timestamptz `json:"last_login"`
+	ID           uuid.UUID           `json:"id"`
+	Email        string              `json:"email"`
+	Name         string              `json:"name"`
+	OidcProvider string              `json:"oidc_provider"`
+	OidcSub      string              `json:"oidc_sub"`
+	Designation  UserDesignationEnum `json:"designation"`
+	ClientID     pgtype.UUID         `json:"client_id"`
+	CreatedAt    pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin    pgtype.Timestamptz  `json:"last_login"`
 }

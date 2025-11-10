@@ -12,6 +12,7 @@ import type { Client, ClientStatus } from '~/types';
 interface UpdateClientForm {
   name: string;
   poc_email: string;
+  email_domain: string;
   status: ClientStatus;
 }
 
@@ -24,6 +25,7 @@ export default function ClientDetailPage() {
   const [formData, setFormData] = useState<UpdateClientForm>({
     name: '',
     poc_email: '',
+    email_domain: '',
     status: 'active',
   });
   const [errors, setErrors] = useState<Partial<UpdateClientForm>>({});
@@ -44,6 +46,7 @@ export default function ClientDetailPage() {
       setFormData({
         name: client.name,
         poc_email: client.poc_email,
+        email_domain: client.email_domain || '',
         status: client.status,
       });
     }
@@ -116,6 +119,7 @@ export default function ClientDetailPage() {
       setFormData({
         name: client.name,
         poc_email: client.poc_email,
+        email_domain: client.email_domain || '',
         status: client.status,
       });
     }
@@ -290,6 +294,22 @@ export default function ClientDetailPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="email_domain">
+                    Email Domain
+                  </Label>
+                  <Input
+                    id="email_domain"
+                    placeholder="e.g., acme.com"
+                    value={formData.email_domain}
+                    onChange={(e) => handleChange('email_domain', e.target.value)}
+                    className={errors.email_domain ? 'border-red-500' : ''}
+                  />
+                  {errors.email_domain && (
+                    <p className="text-sm text-red-500">{errors.email_domain}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
                   <select
                     id="status"
@@ -347,6 +367,10 @@ export default function ClientDetailPage() {
                 <div>
                   <Label className="text-muted-foreground">POC Email</Label>
                   <p className="text-lg">{client.poc_email}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Email Domain</Label>
+                  <p className="text-lg">{client.email_domain || 'Not specified'}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Created</Label>

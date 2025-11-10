@@ -11,10 +11,21 @@ import (
 	"github.com/google/uuid"
 )
 
+const CountFrameworks = `-- name: CountFrameworks :one
+SELECT COUNT(*) FROM compliance_frameworks
+`
+
+func (q *Queries) CountFrameworks(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, CountFrameworks)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const CreateFramework = `-- name: CreateFramework :one
-INSERT INTO compliance_frameworks (name, description, checklist_json, version)
+INSERT INTO compliance_frameworks (name, description,  version)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, checklist_json, version, created_at, updated_at
+RETURNING id, name, description,  version, created_at, updated_at
 `
 
 type CreateFrameworkParams struct {
@@ -36,7 +47,6 @@ func (q *Queries) CreateFramework(ctx context.Context, arg CreateFrameworkParams
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.ChecklistJson,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -55,7 +65,7 @@ func (q *Queries) DeleteFramework(ctx context.Context, id uuid.UUID) error {
 }
 
 const GetFramework = `-- name: GetFramework :one
-SELECT id, name, description, checklist_json, version, created_at, updated_at FROM compliance_frameworks
+SELECT id, name, description,  version, created_at, updated_at FROM compliance_frameworks
 WHERE id = $1 LIMIT 1
 `
 
@@ -66,7 +76,6 @@ func (q *Queries) GetFramework(ctx context.Context, id uuid.UUID) (ComplianceFra
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.ChecklistJson,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -75,7 +84,7 @@ func (q *Queries) GetFramework(ctx context.Context, id uuid.UUID) (ComplianceFra
 }
 
 const GetFrameworkByName = `-- name: GetFrameworkByName :one
-SELECT id, name, description, checklist_json, version, created_at, updated_at FROM compliance_frameworks
+SELECT id, name, description,  version, created_at, updated_at FROM compliance_frameworks
 WHERE name = $1 LIMIT 1
 `
 
@@ -86,7 +95,6 @@ func (q *Queries) GetFrameworkByName(ctx context.Context, name string) (Complian
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.ChecklistJson,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -95,7 +103,7 @@ func (q *Queries) GetFrameworkByName(ctx context.Context, name string) (Complian
 }
 
 const ListFrameworks = `-- name: ListFrameworks :many
-SELECT id, name, description, checklist_json, version, created_at, updated_at FROM compliance_frameworks
+SELECT id, name, description,  version, created_at, updated_at FROM compliance_frameworks
 ORDER BY created_at DESC
 `
 
@@ -112,7 +120,6 @@ func (q *Queries) ListFrameworks(ctx context.Context) ([]ComplianceFramework, er
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.ChecklistJson,
 			&i.Version,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -129,16 +136,15 @@ func (q *Queries) ListFrameworks(ctx context.Context) ([]ComplianceFramework, er
 
 const UpdateFramework = `-- name: UpdateFramework :one
 UPDATE compliance_frameworks
-SET name = $2, description = $3, checklist_json = $4, version = $5
+SET name = $2, description = $3, version = $4
 WHERE id = $1
-RETURNING id, name, description, checklist_json, version, created_at, updated_at
+RETURNING id, name, description,  version, created_at, updated_at
 `
 
 type UpdateFrameworkParams struct {
 	ID            uuid.UUID `json:"id"`
 	Name          string    `json:"name"`
 	Description   *string   `json:"description"`
-	ChecklistJson []byte    `json:"checklist_json"`
 	Version       *string   `json:"version"`
 }
 
@@ -147,7 +153,6 @@ func (q *Queries) UpdateFramework(ctx context.Context, arg UpdateFrameworkParams
 		arg.ID,
 		arg.Name,
 		arg.Description,
-		arg.ChecklistJson,
 		arg.Version,
 	)
 	var i ComplianceFramework
@@ -155,7 +160,6 @@ func (q *Queries) UpdateFramework(ctx context.Context, arg UpdateFrameworkParams
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.ChecklistJson,
 		&i.Version,
 		&i.CreatedAt,
 		&i.UpdatedAt,

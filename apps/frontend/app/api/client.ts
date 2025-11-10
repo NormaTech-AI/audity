@@ -10,6 +10,14 @@ export const apiClient = axios.create({
   },
 });
 
+// Request interceptor to add Authorization header
+apiClient.interceptors.request.use(
+  (config) => {
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Response interceptor for token refresh
 apiClient.interceptors.response.use(
   (response) => response,

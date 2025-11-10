@@ -45,68 +45,6 @@ func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *st
 		tenant.GET("/dashboard/stats", h.GetTenantDashboardStats)
 	}
 
-	// Client management routes (protected)
-	// clients := api.Group("/clients")
-	// {
-	// 	// Admin only - create clients
-	// 	clients.POST("",
-	// 		h.CreateClient,
-	// 		rbac.PermissionMiddleware(store, logger, "clients:create"),
-	// 	)
-
-	// 	// Admin and internal POC - list clients
-	// 	clients.GET("",
-	// 		h.ListClients,
-	// 		rbac.RequireAnyPermission(store, logger, "clients:list", "clients:read"),
-	// 	)
-
-	// 	// Anyone authenticated can view client details (filtered by their access)
-	// 	clients.GET("/:id",
-	// 		h.GetClient,
-	// 		rbac.PermissionMiddleware(store, logger, "clients:read"),
-	// 	)
-
-	// 	// TODO: Add update and delete endpoints with proper permissions
-	// 	clients.PUT("/:id", h.UpdateClient, rbac.PermissionMiddleware(store, logger, "clients:update"))
-	// 	// clients.DELETE("/:id", h.DeleteClient, rbac.PermissionMiddleware(store, logger, "clients:delete"))
-	// }
-
-	// Framework management routes (protected)
-	frameworks := api.Group("/frameworks")
-	{
-		// Admin only - create, update, delete frameworks
-		frameworks.POST("",
-			h.CreateFramework,
-			rbac.PermissionMiddleware(store, logger, "frameworks:create"),
-		)
-
-		frameworks.PUT("/:id",
-			h.UpdateFramework,
-			rbac.PermissionMiddleware(store, logger, "frameworks:update"),
-		)
-
-		frameworks.DELETE("/:id",
-			h.DeleteFramework,
-			rbac.PermissionMiddleware(store, logger, "frameworks:delete"),
-		)
-
-		// Anyone authenticated can list and view frameworks
-		frameworks.GET("",
-			h.ListFrameworks,
-			rbac.PermissionMiddleware(store, logger, "frameworks:list"),
-		)
-
-		frameworks.GET("/:id",
-			h.GetFramework,
-			rbac.PermissionMiddleware(store, logger, "frameworks:read"),
-		)
-
-		frameworks.GET("/:id/checklist",
-			h.GetFrameworkChecklist,
-			rbac.PermissionMiddleware(store, logger, "frameworks:read"),
-		)
-	}
-
 	// Audit management routes (protected, client-specific)
 	audits := api.Group("/clients/:clientId/audits")
 	{

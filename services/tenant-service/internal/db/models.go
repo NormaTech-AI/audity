@@ -259,16 +259,6 @@ type ClientFramework struct {
 	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
 }
 
-type ComplianceFramework struct {
-	ID            uuid.UUID          `json:"id"`
-	Name          string             `json:"name"`
-	Description   *string            `json:"description"`
-	ChecklistJson []byte             `json:"checklist_json"`
-	Version       *string            `json:"version"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
-}
-
 type Permission struct {
 	ID          uuid.UUID          `json:"id"`
 	Name        string             `json:"name"`

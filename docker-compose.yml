@@ -12,6 +12,7 @@ services:
       - auth-service
       - client-service
       - tenant-service
+      - framework-service
 
   # --- FRONTENDS ---
   frontend:
@@ -53,6 +54,9 @@ services:
       - ./go.work:/app/go.work
       - ./packages:/app/packages
       - ./services/auth-service:/app/services/auth-service
+      - ./services/client-service:/app/services/client-service
+      - ./services/tenant-service:/app/services/tenant-service
+      - ./services/framework-service:/app/services/framework-service
     environment:
       AUDITY_AUTH_DATABASE_TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
     depends_on:
@@ -68,7 +72,10 @@ services:
     volumes:
       - ./go.work:/app/go.work
       - ./packages:/app/packages
+      - ./services/auth-service:/app/services/auth-service
+      - ./services/client-service:/app/services/client-service
       - ./services/tenant-service:/app/services/tenant-service
+      - ./services/framework-service:/app/services/framework-service
     environment:
       TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
     depends_on:
@@ -89,11 +96,32 @@ services:
       - ./services/auth-service:/app/services/auth-service
       - ./services/tenant-service:/app/services/tenant-service
       - ./services/client-service:/app/services/client-service
+      - ./services/framework-service:/app/services/framework-service
     environment:
       CLIENT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
     depends_on:
       - postgres
       - minio
+    # No ports exposed to host. Only gateway talks to it.
+
+  framework-service:
+    build:
+      context: .
+      dockerfile: ./services/framework-service/Dockerfile
+      target: development
+    working_dir: /app/services/framework-service
+    volumes:
+      - ./go.work:/app/go.work
+      - ./go.work.sum:/app/go.work.sum
+      - ./packages:/app/packages
+      - ./services/auth-service:/app/services/auth-service
+      - ./services/client-service:/app/services/client-service
+      - ./services/tenant-service:/app/services/tenant-service
+      - ./services/framework-service:/app/services/framework-service
+    environment:
+      FRAMEWORK_DB_URL: "postgres://root:password@postgres:5432/framework_db?sslmode=disable"
+    depends_on:
+      - postgres
     # No ports exposed to host. Only gateway talks to it.
 
   # --- INFRASTRUCTURE ---

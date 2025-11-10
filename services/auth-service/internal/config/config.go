@@ -31,6 +31,7 @@ type AuthConfig struct {
 	GoogleClientSecret   string `mapstructure:"google_client_secret"`
 	MicrosoftClientID    string `mapstructure:"microsoft_client_id"`
 	MicrosoftClientSecret string `mapstructure:"microsoft_client_secret"`
+	MicrosoftTenantID    string `mapstructure:"microsoft_tenant_id"`
 	RedirectURL          string `mapstructure:"redirect_url"`
 	FrontendURL          string `mapstructure:"frontend_url"`
 }

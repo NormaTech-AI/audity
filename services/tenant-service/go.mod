@@ -13,7 +13,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.80
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/echo-swagger v1.4.1
-	github.com/swaggo/swag v1.8.12
+	github.com/swaggo/swag v1.16.4
 	go.uber.org/zap v1.27.0
 )
 
@@ -39,6 +39,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -58,6 +59,7 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
+	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

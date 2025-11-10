@@ -11,6 +11,7 @@ import { api } from '~/api';
 interface CreateClientForm {
   name: string;
   poc_email: string;
+  email_domain: string;
 }
 
 export default function CreateClientPage() {
@@ -20,6 +21,7 @@ export default function CreateClientPage() {
   const [formData, setFormData] = useState<CreateClientForm>({
     name: '',
     poc_email: '',
+    email_domain: '',
   });
 
   const [errors, setErrors] = useState<Partial<CreateClientForm>>({});
@@ -137,6 +139,26 @@ export default function CreateClientPage() {
               )}
               <p className="text-sm text-muted-foreground">
                 This email will be used as the primary contact for this client
+              </p>
+            </div>
+
+            {/* Email Domain */}
+            <div className="space-y-2">
+              <Label htmlFor="email_domain">
+                Email Domain
+              </Label>
+              <Input
+                id="email_domain"
+                placeholder="e.g., acme.com"
+                value={formData.email_domain}
+                onChange={(e) => handleChange('email_domain', e.target.value)}
+                className={errors.email_domain ? 'border-red-500' : ''}
+              />
+              {errors.email_domain && (
+                <p className="text-sm text-red-500">{errors.email_domain}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                The primary email domain for this client organization (without @)
               </p>
             </div>
 

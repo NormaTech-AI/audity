@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/NormaTech-AI/audity/packages/go/auth"
@@ -234,4 +235,145 @@ func joinPermissions(permissions []string) string {
 		result += p
 	}
 	return result
+}
+
+// ClientPermissionMiddleware checks if user has required permission in their client database
+// This uses the client_db pool from context (set by AuthMiddlewareWithClientDB)
+func ClientPermissionMiddleware(logger *zap.SugaredLogger, requiredPermission string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// Get user from context (set by AuthMiddleware)
+			user, err := auth.GetUserFromContext(c)
+			if err != nil {
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "User not authenticated",
+				})
+			}
+
+			// Get client_db pool from context
+			clientDB, err := auth.GetClientDBFromContext(c)
+			if err != nil {
+				logger.Errorw("Client database not found in context", 
+					"error", err, 
+					"user_id", user.UserID)
+				return c.JSON(http.StatusForbidden, map[string]string{
+					"error": "Client database access required",
+				})
+			}
+
+			// Check if user has the required permission in client_db
+			hasPermission, err := checkClientUserPermission(c.Request().Context(), clientDB, user.UserID, requiredPermission)
+			if err != nil {
+				logger.Errorw("Failed to check client permission", 
+					"error", err, 
+					"user_id", user.UserID, 
+					"permission", requiredPermission)
+				return c.JSON(http.StatusInternalServerError, map[string]string{
+					"error": "Failed to verify permissions",
+				})
+			}
+
+			if !hasPermission {
+				logger.Warnw("Client permission denied", 
+					"user_id", user.UserID, 
+					"permission", requiredPermission)
+				return c.JSON(http.StatusForbidden, map[string]string{
+					"error":    "Insufficient permissions",
+					"required": requiredPermission,
+				})
+			}
+
+			logger.Debugw("Client permission granted", 
+				"user_id", user.UserID, 
+				"permission", requiredPermission)
+
+			return next(c)
+		}
+	}
+}
+
+// checkClientUserPermission checks if a user has a specific permission in their client database
+func checkClientUserPermission(ctx context.Context, clientDB *pgxpool.Pool, tenantUserID uuid.UUID, permissionName string) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM client_permissions p
+			JOIN client_role_permissions rp ON p.id = rp.permission_id
+			JOIN client_user_roles ur ON rp.role_id = ur.role_id
+			JOIN client_users cu ON ur.user_id = cu.id
+			WHERE cu.tenant_user_id = $1 AND p.name = $2 AND cu.is_active = true
+		) AS has_permission
+	`
+
+	var hasPermission bool
+	err := clientDB.QueryRow(ctx, query, tenantUserID, permissionName).Scan(&hasPermission)
+	if err != nil {
+		return false, fmt.Errorf("failed to check client permission: %w", err)
+	}
+
+	return hasPermission, nil
+}
+
+// GetClientUserRole fetches the user's role from their client database
+func GetClientUserRole(ctx context.Context, clientDB *pgxpool.Pool, tenantUserID uuid.UUID) (string, error) {
+	query := `SELECT role FROM client_users WHERE tenant_user_id = $1 AND is_active = true`
+
+	var role string
+	err := clientDB.QueryRow(ctx, query, tenantUserID).Scan(&role)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch client user role: %w", err)
+	}
+
+	return role, nil
+}
+
+// ClientRequireAnyPermission creates middleware that requires at least one permission in client_db (OR logic)
+func ClientRequireAnyPermission(logger *zap.SugaredLogger, permissions ...string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user, err := auth.GetUserFromContext(c)
+			if err != nil {
+				return c.JSON(http.StatusUnauthorized, map[string]string{
+					"error": "User not authenticated",
+				})
+			}
+
+			// Get client_db pool from context
+			clientDB, err := auth.GetClientDBFromContext(c)
+			if err != nil {
+				logger.Errorw("Client database not found in context", 
+					"error", err, 
+					"user_id", user.UserID)
+				return c.JSON(http.StatusForbidden, map[string]string{
+					"error": "Client database access required",
+				})
+			}
+
+			// Check if user has at least one of the required permissions
+			for _, permission := range permissions {
+				hasPermission, err := checkClientUserPermission(c.Request().Context(), clientDB, user.UserID, permission)
+				if err != nil {
+					logger.Errorw("Failed to check client permission", 
+						"error", err, 
+						"user_id", user.UserID, 
+						"permission", permission)
+					continue
+				}
+
+				if hasPermission {
+					logger.Debugw("Client permission granted", 
+						"user_id", user.UserID, 
+						"permission", permission)
+					return next(c)
+				}
+			}
+
+			logger.Warnw("No required client permissions found", 
+				"user_id", user.UserID, 
+				"permissions", permissions)
+			return c.JSON(http.StatusForbidden, map[string]string{
+				"error":    "Insufficient permissions",
+				"required": "One of: " + joinPermissions(permissions),
+			})
+		}
+	}
 }

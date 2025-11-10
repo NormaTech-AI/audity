@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetClientByEmailDomain(ctx context.Context, emailDomain *string) (Client, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (GetUserByOIDCRow, error)

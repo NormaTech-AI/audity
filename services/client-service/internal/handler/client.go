@@ -13,8 +13,9 @@ import (
 
 // CreateClientRequest represents the request to create a new client
 type CreateClientRequest struct {
-	Name     string `json:"name" validate:"required"`
-	POCEmail string `json:"poc_email" validate:"required,email"`
+	Name        string `json:"name" validate:"required"`
+	POCEmail    string `json:"poc_email" validate:"required,email"`
+	EmailDomain string `json:"email_domain"`
 }
 
 // ClientResponse represents a client in API responses
@@ -60,10 +61,15 @@ func (h *Handler) CreateClient(c echo.Context) error {
 	err := h.store.ExecTx(ctx, func(q *db.Queries) error {
 		// 1. Create client record
 		var err error
+		var emailDomain *string
+		if req.EmailDomain != "" {
+			emailDomain = &req.EmailDomain
+		}
 		client, err = q.CreateClient(ctx, db.CreateClientParams{
-			Name:     req.Name,
-			PocEmail: req.POCEmail,
-			Status:   db.NullClientStatusEnum{ClientStatusEnum: db.ClientStatusEnumActive, Valid: true},
+			Name:        req.Name,
+			PocEmail:    req.POCEmail,
+			Status:      db.NullClientStatusEnum{ClientStatusEnum: db.ClientStatusEnumActive, Valid: true},
+			EmailDomain: emailDomain,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create client: %w", err)

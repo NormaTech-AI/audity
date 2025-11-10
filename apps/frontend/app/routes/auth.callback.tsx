@@ -21,6 +21,9 @@ export default function AuthCallback() {
 
   const handleCallback = async (token: string) => {
     try {
+      // Store token in localStorage for Authorization header
+      localStorage.setItem('auth_token', token);
+      
       // Send the token to backend to set it as HTTP-only cookie
       const response = await api.auth.setTokenCookie(token);
       
@@ -31,6 +34,8 @@ export default function AuthCallback() {
       navigate('/');
     } catch (error) {
       console.error('OAuth callback failed:', error);
+      // Clear token on error
+      localStorage.removeItem('auth_token');
       navigate('/login');
     }
   };

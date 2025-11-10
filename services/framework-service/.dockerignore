@@ -1,0 +1,11 @@
+tmp/
+bin/
+*.log
+.env
+.env.local
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

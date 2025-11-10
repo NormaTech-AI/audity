@@ -13,29 +13,29 @@ import (
 )
 
 const CreateUser = `-- name: CreateUser :one
-INSERT INTO users (email, name, oidc_provider, oidc_sub, role, client_id)
+INSERT INTO users (email, name, oidc_provider, oidc_sub, designation, client_id)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, email, name, role, client_id, created_at, updated_at, last_login
+RETURNING id, email, name, designation, client_id, created_at, updated_at, last_login
 `
 
 type CreateUserParams struct {
-	Email        string       `json:"email"`
-	Name         string       `json:"name"`
-	OidcProvider string       `json:"oidc_provider"`
-	OidcSub      string       `json:"oidc_sub"`
-	Role         UserRoleEnum `json:"role"`
-	ClientID     pgtype.UUID  `json:"client_id"`
+	Email        string              `json:"email"`
+	Name         string              `json:"name"`
+	OidcProvider string              `json:"oidc_provider"`
+	OidcSub      string              `json:"oidc_sub"`
+	Designation  UserDesignationEnum `json:"designation"`
+	ClientID     pgtype.UUID         `json:"client_id"`
 }
 
 type CreateUserRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
@@ -44,7 +44,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.Name,
 		arg.OidcProvider,
 		arg.OidcSub,
-		arg.Role,
+		arg.Designation,
 		arg.ClientID,
 	)
 	var i CreateUserRow
@@ -52,7 +52,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -72,21 +72,21 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const GetUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, role, client_id, created_at, updated_at, last_login
+SELECT id, email, name, designation, client_id, created_at, updated_at, last_login
 FROM users
 WHERE email = $1
 LIMIT 1
 `
 
 type GetUserByEmailRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
@@ -96,7 +96,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -106,21 +106,21 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const GetUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, role, client_id, created_at, updated_at, last_login
+SELECT id, email, name, designation, client_id, created_at, updated_at, last_login
 FROM users
 WHERE id = $1
 LIMIT 1
 `
 
 type GetUserByIDRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error) {
@@ -130,7 +130,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -140,7 +140,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow
 }
 
 const GetUserByOIDC = `-- name: GetUserByOIDC :one
-SELECT id, email, name, role, client_id, created_at, updated_at, last_login
+SELECT id, email, name, designation, client_id, created_at, updated_at, last_login
 FROM users
 WHERE oidc_provider = $1 AND oidc_sub = $2
 LIMIT 1
@@ -152,14 +152,14 @@ type GetUserByOIDCParams struct {
 }
 
 type GetUserByOIDCRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (GetUserByOIDCRow, error) {
@@ -169,7 +169,7 @@ func (q *Queries) GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (G
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -179,20 +179,20 @@ func (q *Queries) GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (G
 }
 
 const ListUsers = `-- name: ListUsers :many
-SELECT id, email, name, role, client_id, created_at, updated_at, last_login
+SELECT id, email, name, designation, client_id, created_at, updated_at, last_login
 FROM users
 ORDER BY created_at DESC
 `
 
 type ListUsersRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
@@ -208,7 +208,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 			&i.ID,
 			&i.Email,
 			&i.Name,
-			&i.Role,
+			&i.Designation,
 			&i.ClientID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -226,27 +226,27 @@ func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
 
 const UpdateUser = `-- name: UpdateUser :one
 UPDATE users
-SET name = $2, email = $3, role = $4
+SET name = $2, email = $3, designation = $4
 WHERE id = $1
-RETURNING id, email, name, role, client_id, created_at, updated_at, last_login
+RETURNING id, email, name, designation, client_id, created_at, updated_at, last_login
 `
 
 type UpdateUserParams struct {
-	ID    uuid.UUID    `json:"id"`
-	Name  string       `json:"name"`
-	Email string       `json:"email"`
-	Role  UserRoleEnum `json:"role"`
+	ID          uuid.UUID           `json:"id"`
+	Name        string              `json:"name"`
+	Email       string              `json:"email"`
+	Designation UserDesignationEnum `json:"designation"`
 }
 
 type UpdateUserRow struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Name      string             `json:"name"`
-	Role      UserRoleEnum       `json:"role"`
-	ClientID  pgtype.UUID        `json:"client_id"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	LastLogin pgtype.Timestamptz `json:"last_login"`
+	ID          uuid.UUID           `json:"id"`
+	Email       string              `json:"email"`
+	Name        string              `json:"name"`
+	Designation UserDesignationEnum `json:"designation"`
+	ClientID    pgtype.UUID         `json:"client_id"`
+	CreatedAt   pgtype.Timestamptz  `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz  `json:"updated_at"`
+	LastLogin   pgtype.Timestamptz  `json:"last_login"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
@@ -254,14 +254,14 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.ID,
 		arg.Name,
 		arg.Email,
-		arg.Role,
+		arg.Designation,
 	)
 	var i UpdateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Name,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,

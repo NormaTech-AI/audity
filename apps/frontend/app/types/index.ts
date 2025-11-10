@@ -11,7 +11,10 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  designation: string;
+  roles?: string[];
   client_id?: string;
+  visible_modules?: string[];
   created_at: string;
   updated_at: string;
   last_login?: string;
@@ -85,6 +88,7 @@ export interface Client {
   id: string;
   name: string;
   poc_email: string;
+  email_domain?: string;
   status: ClientStatus;
   industry?: string;
   risk_tier?: RiskTier;
@@ -101,6 +105,7 @@ export type RiskTier = 'low' | 'medium' | 'high' | 'critical';
 export interface CreateClientPayload {
   name: string;
   poc_email: string;
+  email_domain?: string;
   industry?: string;
   risk_tier?: RiskTier;
   contact_phone?: string;
@@ -110,6 +115,7 @@ export interface CreateClientPayload {
 export interface UpdateClientPayload {
   name?: string;
   poc_email?: string;
+  email_domain?: string;
   status?: ClientStatus;
   industry?: string;
   risk_tier?: RiskTier;
@@ -181,6 +187,53 @@ export interface ActivityLog {
   resource_id: string;
   details?: string;
   timestamp: string;
+}
+
+// ============================================================================
+// Framework Types
+// ============================================================================
+
+export interface Framework {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  question_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FrameworkChecklist {
+  sections: FrameworkSection[];
+}
+
+export interface FrameworkSection {
+  title: string;
+  description?: string;
+  questions: FrameworkQuestion[];
+}
+
+export interface FrameworkQuestion {
+  question_id?: string;
+  section_title: string;
+  control_id: string;
+  question_text: string;
+  help_text?: string;
+  acceptable_evidence: string[];
+}
+
+export interface CreateFrameworkPayload {
+  name: string;
+  description: string;
+  version: string;
+  questions: FrameworkQuestion[];
+}
+
+export interface UpdateFrameworkPayload {
+  name?: string;
+  description?: string;
+  version?: string;
+  questions?: FrameworkQuestion[];
 }
 
 // ============================================================================

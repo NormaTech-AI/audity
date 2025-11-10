@@ -35,11 +35,13 @@ type CallbackResponse struct {
 
 // UserInfo represents user information in the response
 type UserInfo struct {
-	ID       uuid.UUID  `json:"id"`
-	Email    string     `json:"email"`
-	Name     string     `json:"name"`
-	Role     string     `json:"role"`
-	ClientID *uuid.UUID `json:"client_id,omitempty"`
+	ID             uuid.UUID  `json:"id"`
+	Email          string     `json:"email"`
+	Name           string     `json:"name"`
+	Designation    string     `json:"designation"`     // Job title (e.g., nishaj_admin, auditor, etc.)
+	Roles          []string   `json:"roles"`           // RBAC roles from user_roles table
+	ClientID       *uuid.UUID `json:"client_id,omitempty"`
+	VisibleModules []string   `json:"visible_modules"`
 }
 
 // RefreshRequest represents a token refresh request
@@ -386,7 +388,12 @@ func (h *Handler) findOrCreateUser(ctx context.Context, userInfo *oidc.UserInfo,
 	})
 	if err == nil {
 		// User found, convert to UserInfo
-		return convertDBUserToUserInfo(dbUser.ID, dbUser.Email, dbUser.Name, string(dbUser.Role), dbUser.ClientID), nil
+		result := convertDBUserToUserInfo(dbUser.ID, dbUser.Email, dbUser.Name, string(dbUser.Designation), dbUser.ClientID)
+		// Fetch user roles from user_roles table
+		roles, _ := h.getUserRoles(ctx, dbUser.ID)
+		result.Roles = roles
+		result.VisibleModules = getVisibleModules(roles, string(dbUser.Designation))
+		return result, nil
 	}
 
 	if err != pgx.ErrNoRows {
@@ -394,24 +401,66 @@ func (h *Handler) findOrCreateUser(ctx context.Context, userInfo *oidc.UserInfo,
 	}
 
 	// User doesn't exist, create new user
-	// Default role: stakeholder (least privileged)
-	// Admin should manually assign proper roles
+	// Try to auto-assign client based on email domain
+	var clientID pgtype.UUID
+	emailDomain := extractEmailDomain(userInfo.Email)
+	
+	if emailDomain != "" {
+		client, err := h.store.Queries().GetClientByEmailDomain(ctx, &emailDomain)
+		if err == nil {
+			// Found matching client, assign it
+			clientID = pgtype.UUID{
+				Bytes: client.ID,
+				Valid: true,
+			}
+			h.logger.Infow("Auto-assigning client based on email domain",
+				"email", userInfo.Email,
+				"domain", emailDomain,
+				"client_id", client.ID,
+				"client_name", client.Name)
+		} else if err != pgx.ErrNoRows {
+			// Log error but don't fail user creation
+			h.logger.Warnw("Failed to query client by email domain",
+				"error", err,
+				"email", userInfo.Email,
+				"domain", emailDomain)
+		}
+	}
+	
+	// Default designation: stakeholder (least privileged)
+	// Admin should manually assign proper roles via user_roles table
 	createdUser, err := h.store.Queries().CreateUser(ctx, db.CreateUserParams{
 		Email:        userInfo.Email,
 		Name:         userInfo.Name,
 		OidcProvider: provider,
 		OidcSub:      userInfo.Sub,
-		Role:         db.UserRoleEnumStakeholder,
-		ClientID:     pgtype.UUID{Valid: false}, // NULL for new users
+		Designation:  db.UserDesignationEnumStakeholder,
+		ClientID:     clientID,
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	h.logger.Infow("New user created", "user_id", createdUser.ID, "email", createdUser.Email, "provider", provider)
+	if clientID.Valid {
+		h.logger.Infow("New user created with auto-assigned client",
+			"user_id", createdUser.ID,
+			"email", createdUser.Email,
+			"provider", provider,
+			"client_id", clientID.Bytes)
+	} else {
+		h.logger.Infow("New user created without client assignment",
+			"user_id", createdUser.ID,
+			"email", createdUser.Email,
+			"provider", provider)
+	}
 
-	return convertDBUserToUserInfo(createdUser.ID, createdUser.Email, createdUser.Name, string(createdUser.Role), createdUser.ClientID), nil
+	result := convertDBUserToUserInfo(createdUser.ID, createdUser.Email, createdUser.Name, string(createdUser.Designation), createdUser.ClientID)
+	// Fetch user roles from user_roles table (new user might not have roles yet)
+	roles, _ := h.getUserRoles(ctx, createdUser.ID)
+	result.Roles = roles
+	result.VisibleModules = getVisibleModules(roles, string(createdUser.Designation))
+	return result, nil
 }
 
 // getUserByID fetches user data from database by user ID
@@ -421,7 +470,13 @@ func (h *Handler) getUserByID(ctx context.Context, userID uuid.UUID) (*UserInfo,
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	return convertDBUserToUserInfo(dbUser.ID, dbUser.Email, dbUser.Name, string(dbUser.Role), dbUser.ClientID), nil
+	result := convertDBUserToUserInfo(dbUser.ID, dbUser.Email, dbUser.Name, string(dbUser.Designation), dbUser.ClientID)
+	// Fetch user roles from user_roles table
+	roles, _ := h.getUserRoles(ctx, dbUser.ID)
+	result.Roles = roles
+	result.VisibleModules = getVisibleModules(roles, string(dbUser.Designation))
+	h.logger.Infow("User fetched successfully", "user_id", dbUser.ID, "email", dbUser.Email, "roles", roles)
+	return result, nil
 }
 
 // updateLastLogin updates the user's last login timestamp
@@ -430,12 +485,14 @@ func (h *Handler) updateLastLogin(ctx context.Context, userID uuid.UUID) error {
 }
 
 // convertDBUserToUserInfo converts database user types to API UserInfo
-func convertDBUserToUserInfo(id uuid.UUID, email, name, role string, clientID pgtype.UUID) *UserInfo {
+func convertDBUserToUserInfo(id uuid.UUID, email, name, designation string, clientID pgtype.UUID) *UserInfo {
 	user := &UserInfo{
-		ID:    id,
-		Email: email,
-		Name:  name,
-		Role:  role,
+		ID:             id,
+		Email:          email,
+		Name:           name,
+		Designation:    designation,
+		Roles:          []string{}, // Will be populated by caller
+		VisibleModules: []string{}, // Will be populated based on roles
 	}
 
 	if clientID.Valid {
@@ -447,4 +504,81 @@ func convertDBUserToUserInfo(id uuid.UUID, email, name, role string, clientID pg
 	}
 
 	return user
+}
+
+// getUserRoles fetches user roles from the user_roles table
+func (h *Handler) getUserRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	// Query to get user roles from user_roles table
+	query := `
+		SELECT r.name 
+		FROM roles r
+		JOIN user_roles ur ON r.id = ur.role_id
+		WHERE ur.user_id = $1
+		ORDER BY r.name
+	`
+	
+	rows, err := h.store.GetPool().Query(ctx, query, userID)
+	if err != nil {
+		return []string{}, nil // Return empty array if no roles found
+	}
+	defer rows.Close()
+	
+	roles := []string{}
+	for rows.Next() {
+		var roleName string
+		if err := rows.Scan(&roleName); err != nil {
+			continue
+		}
+		roles = append(roles, roleName)
+	}
+	
+	return roles, nil
+}
+
+// getVisibleModules returns the list of modules visible to a user based on their roles
+// If user has admin role, they see all modules
+// Otherwise, modules are determined by their designation as a fallback
+func getVisibleModules(roles []string, designation string) []string {
+	// Check if user has admin role
+	for _, role := range roles {
+		switch role {
+			case "admin":
+				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks"}
+			case "nishaj_admin":
+				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks"}
+			case "auditor":
+				return []string{"Dashboard", "Clients", "Assessments"}
+			case "team_member":
+				return []string{"Dashboard", "Assessments"}
+			case "poc_internal", "poc_client":
+				return []string{"Dashboard", "Assessments"}
+			case "stakeholder":
+				return []string{"Dashboard", "Assessments"}
+			default:
+				return []string{"Dashboard"}
+		}
+	}
+	
+	// Default for users with roles but not admin
+	return []string{"Dashboard"}
+}
+
+// extractEmailDomain extracts the domain from an email address
+// Example: "user@example.com" -> "example.com"
+func extractEmailDomain(email string) string {
+	parts := splitEmail(email)
+	if len(parts) == 2 {
+		return parts[1]
+	}
+	return ""
+}
+
+// splitEmail splits an email address into local and domain parts
+func splitEmail(email string) []string {
+	for i := len(email) - 1; i >= 0; i-- {
+		if email[i] == '@' {
+			return []string{email[:i], email[i+1:]}
+		}
+	}
+	return []string{email}
 }

@@ -32,12 +32,8 @@ type DashboardData struct {
 func (h *Handler) GetTenantDashboard(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// Get framework count
-	frameworkCount, err := h.store.CountFrameworks(ctx)
-	if err != nil {
-		h.logger.Errorw("Failed to count frameworks", "error", err)
-		frameworkCount = 0
-	}
+	// Framework count will be fetched from framework-service if needed
+	frameworkCount := int64(0)
 
 	// Get client count
 	clientCount, err := h.store.CountClients(ctx)
@@ -97,12 +93,8 @@ func (h *Handler) GetTenantDashboard(c echo.Context) error {
 func (h *Handler) GetTenantDashboardStats(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// Get framework count
-	frameworkCount, err := h.store.CountFrameworks(ctx)
-	if err != nil {
-		h.logger.Errorw("Failed to count frameworks", "error", err)
-		frameworkCount = 0
-	}
+	// Framework count will be fetched from framework-service if needed
+	frameworkCount := int64(0)
 
 	// Get client count
 	clientCount, err := h.store.CountClients(ctx)

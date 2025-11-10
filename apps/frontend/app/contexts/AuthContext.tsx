@@ -36,13 +36,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     api.auth.logout(); // Call the logout API endpoint
     queryClient.setQueryData(['auth', 'user'], null); // Immediately clear the user data in the cache
+    // Clear token from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+    }
   };
 
   // Login function
   const login = async (token: string) => {
     try {
-      // The token is handled by the backend via HTTP-only cookie
-      // Just validate the session and update cache
+      // Store token in localStorage for Authorization header
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', token);
+      }
+      
+      // The token is also handled by the backend via HTTP-only cookie
+      // Validate the session and update cache
       if (typeof window === 'undefined') {
         return; // Don't run login on server-side
       }
@@ -50,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(['auth', 'user'], response.data);
     } catch (error) {
       console.error('Login failed:', error);
+      // Clear token on error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+      }
       throw error;
     }
   };

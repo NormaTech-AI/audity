@@ -24,3 +24,6 @@ RETURNING *;
 -- name: DeleteFramework :exec
 DELETE FROM compliance_frameworks
 WHERE id = $1;
+
+-- name: CountFrameworks :one
+SELECT COUNT(*) FROM compliance_frameworks;

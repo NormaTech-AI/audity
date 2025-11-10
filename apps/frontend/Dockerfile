@@ -19,7 +19,6 @@ COPY apps/frontend/package.json ./apps/frontend/
 COPY apps/user-docs/package.json ./apps/user-docs/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
-COPY packages/ui/package.json ./packages/ui/
 
 # 3. Install ALL dependencies from the root
 # This correctly builds the entire monorepo node_modules

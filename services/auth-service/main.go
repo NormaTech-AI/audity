@@ -100,6 +100,7 @@ func main() {
 			cfg.Auth.MicrosoftClientID,
 			cfg.Auth.MicrosoftClientSecret,
 			cfg.Auth.RedirectURL,
+			cfg.Auth.MicrosoftTenantID,
 		)
 		log.Info("Microsoft OAuth provider initialized")
 	} else {

@@ -140,6 +140,70 @@ func AllAuditStatusEnumValues() []AuditStatusEnum {
 	}
 }
 
+type ClientUserRoleEnum string
+
+const (
+	ClientUserRoleEnumClientAdmin ClientUserRoleEnum = "client_admin"
+	ClientUserRoleEnumPoc         ClientUserRoleEnum = "poc"
+	ClientUserRoleEnumStakeholder ClientUserRoleEnum = "stakeholder"
+	ClientUserRoleEnumViewer      ClientUserRoleEnum = "viewer"
+)
+
+func (e *ClientUserRoleEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClientUserRoleEnum(s)
+	case string:
+		*e = ClientUserRoleEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClientUserRoleEnum: %T", src)
+	}
+	return nil
+}
+
+type NullClientUserRoleEnum struct {
+	ClientUserRoleEnum ClientUserRoleEnum `json:"client_user_role_enum"`
+	Valid              bool               `json:"valid"` // Valid is true if ClientUserRoleEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClientUserRoleEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClientUserRoleEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClientUserRoleEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClientUserRoleEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClientUserRoleEnum), nil
+}
+
+func (e ClientUserRoleEnum) Valid() bool {
+	switch e {
+	case ClientUserRoleEnumClientAdmin,
+		ClientUserRoleEnumPoc,
+		ClientUserRoleEnumStakeholder,
+		ClientUserRoleEnumViewer:
+		return true
+	}
+	return false
+}
+
+func AllClientUserRoleEnumValues() []ClientUserRoleEnum {
+	return []ClientUserRoleEnum{
+		ClientUserRoleEnumClientAdmin,
+		ClientUserRoleEnumPoc,
+		ClientUserRoleEnumStakeholder,
+		ClientUserRoleEnumViewer,
+	}
+}
+
 type QuestionTypeEnum string
 
 const (
@@ -361,6 +425,49 @@ type Audit struct {
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 	CompletedAt   pgtype.Timestamptz `json:"completed_at"`
+}
+
+// Client-specific RBAC permissions
+type ClientPermission struct {
+	ID          uuid.UUID          `json:"id"`
+	Name        string             `json:"name"`
+	Resource    string             `json:"resource"`
+	Action      string             `json:"action"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+// Client-specific RBAC roles
+type ClientRole struct {
+	ID          uuid.UUID          `json:"id"`
+	Name        string             `json:"name"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+// Mapping between roles and permissions
+type ClientRolePermission struct {
+	RoleID       uuid.UUID `json:"role_id"`
+	PermissionID uuid.UUID `json:"permission_id"`
+}
+
+// Client-specific user mappings with roles
+type ClientUser struct {
+	ID           uuid.UUID          `json:"id"`
+	TenantUserID uuid.UUID          `json:"tenant_user_id"`
+	Email        string             `json:"email"`
+	Name         string             `json:"name"`
+	Role         ClientUserRoleEnum `json:"role"`
+	IsActive     bool               `json:"is_active"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	LastLogin    pgtype.Timestamptz `json:"last_login"`
+}
+
+// Mapping between users and roles
+type ClientUserRole struct {
+	UserID uuid.UUID `json:"user_id"`
+	RoleID uuid.UUID `json:"role_id"`
 }
 
 // Discussion and comments on submissions

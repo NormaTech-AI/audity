@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -52,6 +53,12 @@ const navItems: NavItem[] = [
     href: '/rbac',
     icon: Shield,
     permission: 'roles:list',
+  },
+  {
+    title: 'Frameworks',
+    href: '/frameworks',
+    icon: BookOpen,
+    permission: 'frameworks:list',
   },
   {
     title: 'Assessments',
@@ -104,37 +111,47 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.href;
+        {navItems
+          .filter((item) => {
+            // If user has visible_modules, filter based on that
+            if(item.title == "Settings") return true
+            if (user?.visible_modules && user.visible_modules.length > 0) {
+              return user.visible_modules.includes(item.title);
+            }
+            // If no visible_modules, show all items (fallback)
+            return true;
+          })
+          .map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
 
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                collapsed && 'justify-center'
-              )}
-              title={collapsed ? item.title : undefined}
-            >
-              <Icon className="h-5 w-5 flex-shrink-0" />
-              {!collapsed && (
-                <>
-                  <span className="flex-1">{item.title}</span>
-                  {item.badge && (
-                    <span className="px-2 py-0.5 text-xs bg-muted rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  collapsed && 'justify-center'
+                )}
+                title={collapsed ? item.title : undefined}
+              >
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{item.title}</span>
+                    {item.badge && (
+                      <span className="px-2 py-0.5 text-xs bg-muted rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </>
+                )}
+              </Link>
+            );
+          })}
       </nav>
 
       {/* User Section */}
@@ -144,7 +161,7 @@ export function Sidebar() {
             <p className="text-sm font-medium truncate">{user.name}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             <p className="text-xs text-muted-foreground mt-1 capitalize">
-              {user.role}
+              {user.designation}
             </p>
           </div>
         )}

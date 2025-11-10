@@ -50,7 +50,10 @@ func NewGoogleProvider(clientID, clientSecret, redirectURL string) *OIDCProvider
 }
 
 // NewMicrosoftProvider creates a Microsoft OIDC provider
-func NewMicrosoftProvider(clientID, clientSecret, redirectURL string) *OIDCProvider {
+func NewMicrosoftProvider(clientID, clientSecret, redirectURL, tenantID string) *OIDCProvider {
+	// Use tenant-specific endpoint if tenantID is provided, otherwise use "common"
+	// Note: "common" only works for multi-tenant apps created before 10/15/2018
+	
 	config := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -59,8 +62,9 @@ func NewMicrosoftProvider(clientID, clientSecret, redirectURL string) *OIDCProvi
 			"openid",
 			"profile",
 			"email",
+			"User.Read", // Required for Microsoft Graph API /me endpoint
 		},
-		Endpoint: microsoft.AzureADEndpoint("common"),
+		Endpoint: microsoft.AzureADEndpoint(tenantID),
 	}
 
 	return &OIDCProvider{
@@ -118,13 +122,20 @@ func (p *OIDCProvider) GetUserInfo(ctx context.Context, token *oauth2.Token) (*U
 			DisplayName       string `json:"displayName"`
 			GivenName         string `json:"givenName"`
 			Surname           string `json:"surname"`
+			Sub               string `json:"sub"`
 		}
 		if err := json.Unmarshal(body, &msUser); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal Microsoft user info: %w", err)
 		}
 
+		// Use Sub if available (OIDC standard), otherwise fall back to ID
+		sub := msUser.Sub
+		if sub == "" {
+			sub = msUser.ID
+		}
+
 		userInfo = UserInfo{
-			Sub:           msUser.ID,
+			Sub:           sub,
 			Email:         msUser.Mail,
 			EmailVerified: true, // Microsoft emails are verified
 			Name:          msUser.DisplayName,

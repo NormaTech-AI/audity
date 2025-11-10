@@ -21,6 +21,12 @@ export default [
     route("clients/:id", "routes/clients.$id.tsx"),
     route("users", "routes/users._index.tsx"),
     route("rbac", "routes/rbac._index.tsx"),
+    
+    // Framework routes
+    route("frameworks", "routes/frameworks._index.tsx"),
+    route("frameworks/new", "routes/frameworks.new.tsx"),
+    route("frameworks/:id/edit", "routes/frameworks.$id.edit.tsx"),
+    route("frameworks/:id", "routes/frameworks.$id.tsx"),
     // route("settings", "routes/settings.tsx"),
 ]),
 ] satisfies RouteConfig;

@@ -213,6 +213,12 @@ export const dashboardApi = {
 };
 
 // ============================================================================
+// Framework Module
+// ============================================================================
+
+import { frameworkApi } from "./framework";
+
+// ============================================================================
 // Audit Module (Import all audit-related APIs)
 // ============================================================================
 
@@ -229,8 +235,9 @@ export const api = {
   users: userApi,
   rbac: rbacApi,
   dashboard: dashboardApi,
+  // Framework module
+  frameworks: frameworkApi,
   // Audit module
-  frameworks: auditModule.frameworks,
   audits: auditModule.audits,
   submissions: auditModule.submissions,
   evidence: auditModule.evidence,

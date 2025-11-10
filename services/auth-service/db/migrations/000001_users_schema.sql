@@ -1,5 +1,7 @@
 -- Create enum types
-CREATE TYPE user_role_enum AS ENUM ('nishaj_admin', 'auditor', 'team_member', 'poc_internal', 'poc_client', 'stakeholder');
+-- Note: This represents user designation/job title, not RBAC roles
+-- RBAC roles are managed in the user_roles table in tenant-service
+CREATE TYPE user_designation_enum AS ENUM ('nishaj_admin', 'auditor', 'team_member', 'poc_internal', 'poc_client', 'stakeholder');
 
 -- Users table (all users across tenants - for OIDC mapping)
 CREATE TABLE users (
@@ -8,7 +10,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     oidc_provider VARCHAR(50) NOT NULL, -- 'google' or 'microsoft'
     oidc_sub VARCHAR(255) NOT NULL, -- Subject from OIDC provider
-    role user_role_enum NOT NULL,
+    designation user_designation_enum NOT NULL, -- User's job title/position
     client_id UUID, -- NULL for Nishaj internal users
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -18,7 +20,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_client_id ON users(client_id);
-CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_designation ON users(designation);
 CREATE INDEX idx_users_oidc ON users(oidc_provider, oidc_sub);
 
 -- Function to update updated_at timestamp

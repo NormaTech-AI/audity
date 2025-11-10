@@ -53,8 +53,12 @@ WORKDIR /app
 COPY go.work* ./
 COPY packages/ ./packages/
 
-# Copy service files
+# Copy all service go.mod files (required by go.work)
+COPY services/auth-service/go.mod services/auth-service/go.sum* ./services/auth-service/
 COPY services/client-service/go.mod services/client-service/go.sum* ./services/client-service/
+COPY services/tenant-service/go.mod services/tenant-service/go.sum* ./services/tenant-service/
+COPY services/framework-service/go.mod services/framework-service/go.sum* ./services/framework-service/
+
 WORKDIR /app/services/client-service
 RUN go mod download
 

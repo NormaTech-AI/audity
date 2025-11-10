@@ -31,17 +31,6 @@ func (q *Queries) CountClientFrameworks(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const CountFrameworks = `-- name: CountFrameworks :one
-SELECT COUNT(*) FROM compliance_frameworks
-`
-
-func (q *Queries) CountFrameworks(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, CountFrameworks)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const CountTotalUsers = `-- name: CountTotalUsers :one
 SELECT COUNT(*) FROM users
 `

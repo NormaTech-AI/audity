@@ -19,19 +19,16 @@ type Querier interface {
 	CountClientFrameworks(ctx context.Context) (int64, error)
 	CountClients(ctx context.Context) (int64, error)
 	CountClientsByStatus(ctx context.Context, status NullClientStatusEnum) (int64, error)
-	CountFrameworks(ctx context.Context) (int64, error)
 	CountTotalUsers(ctx context.Context) (int64, error)
 	CreateAuditLog(ctx context.Context, arg CreateAuditLogParams) (AuditLog, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateClientBucket(ctx context.Context, arg CreateClientBucketParams) (ClientBucket, error)
 	CreateClientDatabase(ctx context.Context, arg CreateClientDatabaseParams) (ClientDatabase, error)
-	CreateFramework(ctx context.Context, arg CreateFrameworkParams) (ComplianceFramework, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteClient(ctx context.Context, id uuid.UUID) error
 	DeleteClientBucket(ctx context.Context, clientID uuid.UUID) error
 	DeleteClientDatabase(ctx context.Context, clientID uuid.UUID) error
 	DeleteClientFramework(ctx context.Context, id uuid.UUID) error
-	DeleteFramework(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	GetAuditLog(ctx context.Context, id uuid.UUID) (AuditLog, error)
 	GetClient(ctx context.Context, id uuid.UUID) (Client, error)
@@ -42,8 +39,6 @@ type Querier interface {
 	GetClientDatabase(ctx context.Context, clientID uuid.UUID) (ClientDatabase, error)
 	GetClientDatabaseByName(ctx context.Context, dbName string) (ClientDatabase, error)
 	GetClientFramework(ctx context.Context, id uuid.UUID) (GetClientFrameworkRow, error)
-	GetFramework(ctx context.Context, id uuid.UUID) (ComplianceFramework, error)
-	GetFrameworkByName(ctx context.Context, name string) (ComplianceFramework, error)
 	GetPermission(ctx context.Context, id uuid.UUID) (Permission, error)
 	GetPermissionByName(ctx context.Context, name string) (Permission, error)
 	GetRole(ctx context.Context, id uuid.UUID) (Role, error)
@@ -63,7 +58,6 @@ type Querier interface {
 	ListClientDatabases(ctx context.Context) ([]ClientDatabase, error)
 	ListClientFrameworks(ctx context.Context, clientID uuid.UUID) ([]ListClientFrameworksRow, error)
 	ListClients(ctx context.Context) ([]Client, error)
-	ListFrameworks(ctx context.Context) ([]ComplianceFramework, error)
 	ListFrameworksByStatus(ctx context.Context, status NullAuditStatusEnum) ([]ListFrameworksByStatusRow, error)
 	ListPermissions(ctx context.Context) ([]Permission, error)
 	ListRoles(ctx context.Context) ([]Role, error)
@@ -73,7 +67,6 @@ type Querier interface {
 	RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error
 	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
 	UpdateClientFrameworkStatus(ctx context.Context, arg UpdateClientFrameworkStatusParams) (ClientFramework, error)
-	UpdateFramework(ctx context.Context, arg UpdateFrameworkParams) (ComplianceFramework, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserLastLogin(ctx context.Context, id uuid.UUID) error
 }

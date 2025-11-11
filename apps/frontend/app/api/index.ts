@@ -15,8 +15,10 @@ import type {
   Permission,
   AssignRolePayload,
   DashboardData,
+  ClientDashboardData,
   PaginatedResponse,
   QueryParams,
+  ClientResponse,
 } from "~/types";
 
 // ============================================================================
@@ -92,8 +94,8 @@ export const tenantApi = {
 
 export const clientApi = {
   // List all clients
-  list: (params?: QueryParams): Promise<AxiosResponse<PaginatedResponse<Client>>> =>
-    apiClient.get<PaginatedResponse<Client>>('/clients', { params }),
+  list: (params?: QueryParams): Promise<AxiosResponse<ClientResponse[]>> =>
+    apiClient.get<ClientResponse[]>('/clients', { params }),
 
   // Get client by ID
   getById: (id: string): Promise<AxiosResponse<Client>> =>
@@ -124,6 +126,9 @@ export const userApi = {
   // List all users
   list: (params?: QueryParams): Promise<AxiosResponse<PaginatedResponse<User>>> =>
     apiClient.get<PaginatedResponse<User>>('/users', { params }),
+
+  listAuditors: (params?: QueryParams): Promise<AxiosResponse<PaginatedResponse<User>>> =>
+    apiClient.get<PaginatedResponse<User>>('/users?client_id=tenant&role=auditor', { params }),
 
   // Get user by ID
   getById: (id: string): Promise<AxiosResponse<User>> =>
@@ -210,6 +215,10 @@ export const dashboardApi = {
 
   getClientDashboardStats: (): Promise<AxiosResponse<any>> =>
     apiClient.get('/client/dashboard/stats'),
+  
+  // Get client-specific dashboard with audit cycles and analytics
+  getClientSpecificDashboard: (clientId: string): Promise<AxiosResponse<ClientDashboardData>> =>
+    apiClient.get<ClientDashboardData>(`/tenant/dashboard/client/${clientId}`),
 };
 
 // ============================================================================
@@ -219,10 +228,22 @@ export const dashboardApi = {
 import { frameworkApi } from "./framework";
 
 // ============================================================================
+// Audit Cycle Module
+// ============================================================================
+
+import { auditCycleApi } from "./audit-cycle";
+
+// ============================================================================
 // Audit Module (Import all audit-related APIs)
 // ============================================================================
 
 import { auditModule } from "./audit";
+
+// ============================================================================
+// Client Audit Module
+// ============================================================================
+
+import { clientAuditApi } from "./client-audit";
 
 // ============================================================================
 // Export all APIs
@@ -237,6 +258,8 @@ export const api = {
   dashboard: dashboardApi,
   // Framework module
   frameworks: frameworkApi,
+  // Audit Cycle module
+  auditCycles: auditCycleApi,
   // Audit module
   audits: auditModule.audits,
   submissions: auditModule.submissions,
@@ -244,6 +267,8 @@ export const api = {
   comments: auditModule.comments,
   activity: auditModule.activity,
   reports: auditModule.reports,
+  // Client Audit module (for client users)
+  clientAudit: clientAuditApi,
 };
 
 export default api;

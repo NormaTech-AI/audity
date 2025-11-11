@@ -27,6 +27,20 @@ export default [
     route("frameworks/new", "routes/frameworks.new.tsx"),
     route("frameworks/:id/edit", "routes/frameworks.$id.edit.tsx"),
     route("frameworks/:id", "routes/frameworks.$id.tsx"),
+
+    // Audit Cycle routes
+    route("audit-cycles", "routes/audit-cycles._index.tsx"),
+    route("audit-cycles/new", "routes/audit-cycles.new.tsx"),
+    route("audit-cycles/:id/edit", "routes/audit-cycles.$id.edit.tsx"),
+    route("audit-cycles/:id/add-client", "routes/audit-cycles.$id.add-client.tsx"),
+    route("audit-cycles/:id/clients/:clientId/edit", "routes/audit-cycles.$id.clients.$clientId.edit.tsx"),
+    route("audit-cycles/:id/clients/:clientId/assign-framework", "routes/audit-cycles.$id.clients.$clientId.assign-framework.tsx"),
+    route("audit-cycles/:id/clients/:clientId", "routes/audit-cycles.$id.clients.$clientId.tsx"),
+    route("audit-cycles/:id", "routes/audit-cycles.$id.tsx"),
     // route("settings", "routes/settings.tsx"),
+
+    // Client Audit routes
+    route("audit", "routes/audit.tsx"),
+    route("audit/:auditId", "routes/audit.$auditId.tsx"),
 ]),
 ] satisfies RouteConfig;

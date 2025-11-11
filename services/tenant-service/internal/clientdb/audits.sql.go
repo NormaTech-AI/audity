@@ -69,6 +69,61 @@ func (q *Queries) DeleteAudit(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const GetAllAuditsProgress = `-- name: GetAllAuditsProgress :many
+SELECT 
+    a.id,
+    a.framework_id,
+    a.framework_name,
+    a.status,
+    a.due_date,
+    COUNT(DISTINCT q.id) as total_questions,
+    COUNT(DISTINCT CASE WHEN s.status IN ('approved', 'submitted') THEN q.id END) as answered_questions
+FROM audits a
+LEFT JOIN questions q ON q.audit_id = a.id
+LEFT JOIN submissions s ON s.question_id = q.id
+GROUP BY a.id, a.framework_id, a.framework_name, a.status, a.due_date
+ORDER BY a.due_date ASC
+`
+
+type GetAllAuditsProgressRow struct {
+	ID                uuid.UUID       `json:"id"`
+	FrameworkID       uuid.UUID       `json:"framework_id"`
+	FrameworkName     string          `json:"framework_name"`
+	Status            AuditStatusEnum `json:"status"`
+	DueDate           pgtype.Date     `json:"due_date"`
+	TotalQuestions    int64           `json:"total_questions"`
+	AnsweredQuestions int64           `json:"answered_questions"`
+}
+
+// Get progress for all audits (frameworks) - for dashboard analytics
+func (q *Queries) GetAllAuditsProgress(ctx context.Context) ([]GetAllAuditsProgressRow, error) {
+	rows, err := q.db.Query(ctx, GetAllAuditsProgress)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAllAuditsProgressRow{}
+	for rows.Next() {
+		var i GetAllAuditsProgressRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.FrameworkID,
+			&i.FrameworkName,
+			&i.Status,
+			&i.DueDate,
+			&i.TotalQuestions,
+			&i.AnsweredQuestions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const GetAuditByID = `-- name: GetAuditByID :one
 SELECT id, framework_id, framework_name, assigned_by, assigned_to, due_date, status, created_at, updated_at, completed_at FROM audits
 WHERE id = $1

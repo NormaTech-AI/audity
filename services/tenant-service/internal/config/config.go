@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -12,6 +13,7 @@ type Config struct {
 	MinIO    MinIOConfig    `mapstructure:"minio"`
 	Auth     AuthConfig     `mapstructure:"auth"`
 	Crypto   CryptoConfig   `mapstructure:"crypto"`
+	MicrosoftMail MicrosoftMailConfig `mapstructure:"microsoft_mail"`
 }
 
 type ServerConfig struct {
@@ -24,7 +26,6 @@ type DatabaseConfig struct {
 	TenantDBURL string `mapstructure:"tenant_db_url"`
 	MaxConns    int32  `mapstructure:"max_conns"`
 	MinConns    int32  `mapstructure:"min_conns"`
-	// For provisioning new tenant databases
 	PostgresHost     string `mapstructure:"postgres_host"`
 	PostgresPort     int    `mapstructure:"postgres_port"`
 	PostgresUser     string `mapstructure:"postgres_user"`
@@ -39,13 +40,20 @@ type MinIOConfig struct {
 }
 
 type AuthConfig struct {
-	JWTSecret            string `mapstructure:"jwt_secret"`
-	JWTExpirationHours   int    `mapstructure:"jwt_expiration_hours"`
-	GoogleClientID       string `mapstructure:"google_client_id"`
-	GoogleClientSecret   string `mapstructure:"google_client_secret"`
-	MicrosoftClientID    string `mapstructure:"microsoft_client_id"`
+	JWTSecret             string `mapstructure:"jwt_secret"`
+	JWTExpirationHours    int    `mapstructure:"jwt_expiration_hours"`
+	GoogleClientID        string `mapstructure:"google_client_id"`
+	GoogleClientSecret    string `mapstructure:"google_client_secret"`
+	MicrosoftClientID     string `mapstructure:"microsoft_client_id"`
 	MicrosoftClientSecret string `mapstructure:"microsoft_client_secret"`
-	RedirectURL          string `mapstructure:"redirect_url"`
+	RedirectURL           string `mapstructure:"redirect_url"`
+}
+
+type MicrosoftMailConfig struct {
+	TenantID     string `mapstructure:"tenant_id"`
+	ClientID     string `mapstructure:"client_id"`
+	ClientSecret string `mapstructure:"client_secret"`
+	SenderEmail  string `mapstructure:"sender_email"`
 }
 
 type CryptoConfig struct {
@@ -112,8 +120,18 @@ func (c *Config) Validate() error {
 	if c.Crypto.EncryptionKey == "" {
 		return fmt.Errorf("crypto.encryption_key is required")
 	}
-	if len(c.Crypto.EncryptionKey) != 32 {
-		return fmt.Errorf("crypto.encryption_key must be 32 bytes for AES-256")
+
+	// Accept either a raw 32-byte string or a base64-encoded 32-byte value.
+	if len(c.Crypto.EncryptionKey) == 32 {
+		return nil
+	}
+
+	// Try base64 decode to see if it yields 32 bytes
+	if decoded, err := base64.StdEncoding.DecodeString(c.Crypto.EncryptionKey); err == nil {
+		if len(decoded) == 32 {
+			return nil
+		}
+		return fmt.Errorf("crypto.encryption_key must be 32 bytes for AES-256 after base64 decoding, got %d bytes", len(decoded))
 	}
 	return nil
 }

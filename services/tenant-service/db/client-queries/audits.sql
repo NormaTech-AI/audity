@@ -55,3 +55,19 @@ LEFT JOIN questions q ON q.audit_id = a.id
 LEFT JOIN submissions s ON s.question_id = q.id
 WHERE a.id = $1
 GROUP BY a.id;
+
+-- name: GetAllAuditsProgress :many
+-- Get progress for all audits (frameworks) - for dashboard analytics
+SELECT 
+    a.id,
+    a.framework_id,
+    a.framework_name,
+    a.status,
+    a.due_date,
+    COUNT(DISTINCT q.id) as total_questions,
+    COUNT(DISTINCT CASE WHEN s.status IN ('approved', 'submitted') THEN q.id END) as answered_questions
+FROM audits a
+LEFT JOIN questions q ON q.audit_id = a.id
+LEFT JOIN submissions s ON s.question_id = q.id
+GROUP BY a.id, a.framework_id, a.framework_name, a.status, a.due_date
+ORDER BY a.due_date ASC;

@@ -178,6 +178,99 @@ export interface DashboardData {
   recent_activity?: ActivityLog[];
 }
 
+// Client-specific dashboard types
+export interface ClientDashboardStats {
+  active_audit_cycles: number;
+  total_framework_assignments: number;
+}
+
+export interface FrameworkAssignment {
+  framework_assignment_id?: string;
+  framework_id?: string;
+  framework_name?: string;
+  due_date?: string;
+  framework_status?: string;
+  auditor_id?: string;
+}
+
+export interface AuditCycleEnrollment {
+  audit_cycle_id: string;
+  audit_cycle_name: string;
+  audit_cycle_description?: string;
+  start_date: string;
+  end_date: string;
+  cycle_status: string;
+  enrollment_id: string;
+  enrolled_at: string;
+  frameworks: FrameworkAssignment[];
+}
+
+export interface FrameworkAnalytics {
+  audit_id: string;
+  framework_id: string;
+  framework_name: string;
+  status: string;
+  due_date: string;
+  total_questions: number;
+  answered_questions: number;
+}
+
+export interface ClientDashboardData {
+  client_name: string;
+  stats: ClientDashboardStats;
+  audit_cycles: AuditCycleEnrollment[];
+  framework_analytics: FrameworkAnalytics[];
+}
+
+// Client Audit Module Types
+export interface ClientAudit {
+  id: string;
+  framework_id: string;
+  framework_name: string;
+  due_date: string;
+  status: 'not_started' | 'in_progress' | 'under_review' | 'completed' | 'overdue';
+  total_questions: number;
+  answered_count: number;
+  progress_percent: number;
+  created_at: string;
+}
+
+export interface ClientAuditQuestion {
+  id: string;
+  section: string;
+  question_number: string;
+  question_text: string;
+  question_type: 'yes_no' | 'text' | 'multiple_choice';
+  help_text?: string;
+  is_mandatory: boolean;
+  display_order: number;
+  submission_id?: string;
+  answer_value?: 'yes' | 'no' | 'na';
+  answer_text?: string;
+  explanation?: string;
+  submission_status?: 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'rejected' | 'referred';
+  submitted_at?: string;
+  submitted_by?: string;
+  is_assigned_to_me: boolean;
+}
+
+export interface ClientAuditDetail {
+  id: string;
+  framework_id: string;
+  framework_name: string;
+  due_date: string;
+  status: string;
+  created_at: string;
+  questions: ClientAuditQuestion[];
+}
+
+export interface ClientSubmissionPayload {
+  question_id: string;
+  answer_value?: 'yes' | 'no' | 'na';
+  answer_text?: string;
+  explanation: string;
+}
+
 export interface ActivityLog {
   id: string;
   user_id: string;
@@ -234,6 +327,82 @@ export interface UpdateFrameworkPayload {
   description?: string;
   version?: string;
   questions?: FrameworkQuestion[];
+}
+
+// ============================================================================
+// Audit Cycle Types
+// ============================================================================
+
+export interface AuditCycle {
+  id: string;
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  status: 'active' | 'completed' | 'archived';
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditCycleClient {
+  id: string;
+  audit_cycle_id: string;
+  client_id: string;
+  client_name: string;
+  poc_email: string;
+  client_status: string;
+  created_at: string;
+}
+
+export interface AuditCycleFramework {
+  id: string;
+  audit_cycle_client_id: string;
+  framework_id: string;
+  framework_name: string;
+  client_id: string;
+  client_name: string;
+  assigned_by?: string;
+  assigned_at: string;
+  due_date?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue';
+  auditor_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuditCycleStats {
+  id: string;
+  name: string;
+  status: string;
+  total_clients: number;
+  total_frameworks: number;
+  completed_frameworks: number;
+  in_progress_frameworks: number;
+  pending_frameworks: number;
+  overdue_frameworks: number;
+}
+
+export interface CreateAuditCyclePayload {
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface UpdateAuditCyclePayload {
+  name?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: 'active' | 'completed' | 'archived';
+}
+
+export interface AssignFrameworkPayload {
+  framework_id: string;
+  framework_name: string;
+  due_date?: string;
+  auditor_id?: string;
 }
 
 // ============================================================================
@@ -347,6 +516,15 @@ export interface PaginatedResponse<T> {
   total_pages: number;
 }
 
+export interface ClientResponse{
+    id: string,
+    name: string,
+    poc_email: string,
+    email_domain: string,
+    status: "active" | "inactive",
+    created_at: string,
+    updated_at: string
+}
 export interface ApiError {
   error: string;
   message?: string;

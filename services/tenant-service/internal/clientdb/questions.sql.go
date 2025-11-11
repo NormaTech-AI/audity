@@ -12,6 +12,46 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const AssignQuestionToUser = `-- name: AssignQuestionToUser :one
+INSERT INTO question_assignments (
+    question_id,
+    assigned_to,
+    assigned_by,
+    notes
+) VALUES (
+    $1, $2, $3, $4
+)
+ON CONFLICT (question_id, assigned_to) DO UPDATE
+SET notes = EXCLUDED.notes
+RETURNING id, question_id, assigned_to, assigned_by, assigned_at, notes
+`
+
+type AssignQuestionToUserParams struct {
+	QuestionID uuid.UUID `json:"question_id"`
+	AssignedTo uuid.UUID `json:"assigned_to"`
+	AssignedBy uuid.UUID `json:"assigned_by"`
+	Notes      *string   `json:"notes"`
+}
+
+func (q *Queries) AssignQuestionToUser(ctx context.Context, arg AssignQuestionToUserParams) (QuestionAssignment, error) {
+	row := q.db.QueryRow(ctx, AssignQuestionToUser,
+		arg.QuestionID,
+		arg.AssignedTo,
+		arg.AssignedBy,
+		arg.Notes,
+	)
+	var i QuestionAssignment
+	err := row.Scan(
+		&i.ID,
+		&i.QuestionID,
+		&i.AssignedTo,
+		&i.AssignedBy,
+		&i.AssignedAt,
+		&i.Notes,
+	)
+	return i, err
+}
+
 type BulkCreateQuestionsParams struct {
 	AuditID        uuid.UUID        `json:"audit_id"`
 	Section        string           `json:"section"`
@@ -179,6 +219,38 @@ func (q *Queries) GetQuestionWithSubmission(ctx context.Context, id uuid.UUID) (
 	return i, err
 }
 
+const ListQuestionAssignments = `-- name: ListQuestionAssignments :many
+SELECT id, question_id, assigned_to, assigned_by, assigned_at, notes FROM question_assignments
+WHERE question_id = $1
+`
+
+func (q *Queries) ListQuestionAssignments(ctx context.Context, questionID uuid.UUID) ([]QuestionAssignment, error) {
+	rows, err := q.db.Query(ctx, ListQuestionAssignments, questionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []QuestionAssignment{}
+	for rows.Next() {
+		var i QuestionAssignment
+		if err := rows.Scan(
+			&i.ID,
+			&i.QuestionID,
+			&i.AssignedTo,
+			&i.AssignedBy,
+			&i.AssignedAt,
+			&i.Notes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ListQuestionsByAudit = `-- name: ListQuestionsByAudit :many
 SELECT id, audit_id, section, question_number, question_text, question_type, help_text, is_mandatory, display_order, created_at, updated_at FROM questions
 WHERE audit_id = $1
@@ -260,6 +332,98 @@ func (q *Queries) ListQuestionsBySection(ctx context.Context, arg ListQuestionsB
 	return items, nil
 }
 
+const ListQuestionsForUser = `-- name: ListQuestionsForUser :many
+SELECT DISTINCT
+    q.id, q.audit_id, q.section, q.question_number, q.question_text, q.question_type, q.help_text, q.is_mandatory, q.display_order, q.created_at, q.updated_at,
+    s.id as submission_id,
+    s.answer_value,
+    s.answer_text,
+    s.explanation,
+    s.status as submission_status,
+    s.submitted_at,
+    s.submitted_by,
+    qa.assigned_to as assigned_user_id
+FROM questions q
+LEFT JOIN submissions s ON s.question_id = q.id
+LEFT JOIN question_assignments qa ON qa.question_id = q.id
+WHERE q.audit_id = $1
+    AND (
+        $2 = true  -- is_poc: if true, show all questions
+        OR qa.assigned_to = $3  -- if stakeholder, show only assigned questions
+    )
+ORDER BY q.display_order ASC
+`
+
+type ListQuestionsForUserParams struct {
+	AuditID    uuid.UUID   `json:"audit_id"`
+	Column2    interface{} `json:"column_2"`
+	AssignedTo uuid.UUID   `json:"assigned_to"`
+}
+
+type ListQuestionsForUserRow struct {
+	ID               uuid.UUID                `json:"id"`
+	AuditID          uuid.UUID                `json:"audit_id"`
+	Section          string                   `json:"section"`
+	QuestionNumber   string                   `json:"question_number"`
+	QuestionText     string                   `json:"question_text"`
+	QuestionType     QuestionTypeEnum         `json:"question_type"`
+	HelpText         *string                  `json:"help_text"`
+	IsMandatory      bool                     `json:"is_mandatory"`
+	DisplayOrder     int32                    `json:"display_order"`
+	CreatedAt        pgtype.Timestamptz       `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz       `json:"updated_at"`
+	SubmissionID     pgtype.UUID              `json:"submission_id"`
+	AnswerValue      NullAnswerValueEnum      `json:"answer_value"`
+	AnswerText       *string                  `json:"answer_text"`
+	Explanation      *string                  `json:"explanation"`
+	SubmissionStatus NullSubmissionStatusEnum `json:"submission_status"`
+	SubmittedAt      pgtype.Timestamptz       `json:"submitted_at"`
+	SubmittedBy      pgtype.UUID              `json:"submitted_by"`
+	AssignedUserID   pgtype.UUID              `json:"assigned_user_id"`
+}
+
+// Get questions for a specific user based on their role
+// POC users see all questions, stakeholders see only assigned questions
+func (q *Queries) ListQuestionsForUser(ctx context.Context, arg ListQuestionsForUserParams) ([]ListQuestionsForUserRow, error) {
+	rows, err := q.db.Query(ctx, ListQuestionsForUser, arg.AuditID, arg.Column2, arg.AssignedTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListQuestionsForUserRow{}
+	for rows.Next() {
+		var i ListQuestionsForUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AuditID,
+			&i.Section,
+			&i.QuestionNumber,
+			&i.QuestionText,
+			&i.QuestionType,
+			&i.HelpText,
+			&i.IsMandatory,
+			&i.DisplayOrder,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.SubmissionID,
+			&i.AnswerValue,
+			&i.AnswerText,
+			&i.Explanation,
+			&i.SubmissionStatus,
+			&i.SubmittedAt,
+			&i.SubmittedBy,
+			&i.AssignedUserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ListQuestionsWithSubmissions = `-- name: ListQuestionsWithSubmissions :many
 SELECT 
     q.id, q.audit_id, q.section, q.question_number, q.question_text, q.question_type, q.help_text, q.is_mandatory, q.display_order, q.created_at, q.updated_at,
@@ -322,6 +486,79 @@ func (q *Queries) ListQuestionsWithSubmissions(ctx context.Context, auditID uuid
 		return nil, err
 	}
 	return items, nil
+}
+
+const ListUserAssignments = `-- name: ListUserAssignments :many
+SELECT 
+    qa.id, qa.question_id, qa.assigned_to, qa.assigned_by, qa.assigned_at, qa.notes,
+    q.question_text,
+    q.section,
+    q.audit_id,
+    a.framework_name
+FROM question_assignments qa
+JOIN questions q ON q.id = qa.question_id
+JOIN audits a ON a.id = q.audit_id
+WHERE qa.assigned_to = $1
+ORDER BY qa.assigned_at DESC
+`
+
+type ListUserAssignmentsRow struct {
+	ID            uuid.UUID          `json:"id"`
+	QuestionID    uuid.UUID          `json:"question_id"`
+	AssignedTo    uuid.UUID          `json:"assigned_to"`
+	AssignedBy    uuid.UUID          `json:"assigned_by"`
+	AssignedAt    pgtype.Timestamptz `json:"assigned_at"`
+	Notes         *string            `json:"notes"`
+	QuestionText  string             `json:"question_text"`
+	Section       string             `json:"section"`
+	AuditID       uuid.UUID          `json:"audit_id"`
+	FrameworkName string             `json:"framework_name"`
+}
+
+func (q *Queries) ListUserAssignments(ctx context.Context, assignedTo uuid.UUID) ([]ListUserAssignmentsRow, error) {
+	rows, err := q.db.Query(ctx, ListUserAssignments, assignedTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUserAssignmentsRow{}
+	for rows.Next() {
+		var i ListUserAssignmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.QuestionID,
+			&i.AssignedTo,
+			&i.AssignedBy,
+			&i.AssignedAt,
+			&i.Notes,
+			&i.QuestionText,
+			&i.Section,
+			&i.AuditID,
+			&i.FrameworkName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const UnassignQuestionFromUser = `-- name: UnassignQuestionFromUser :exec
+DELETE FROM question_assignments
+WHERE question_id = $1 AND assigned_to = $2
+`
+
+type UnassignQuestionFromUserParams struct {
+	QuestionID uuid.UUID `json:"question_id"`
+	AssignedTo uuid.UUID `json:"assigned_to"`
+}
+
+func (q *Queries) UnassignQuestionFromUser(ctx context.Context, arg UnassignQuestionFromUserParams) error {
+	_, err := q.db.Exec(ctx, UnassignQuestionFromUser, arg.QuestionID, arg.AssignedTo)
+	return err
 }
 
 const UpdateQuestion = `-- name: UpdateQuestion :one

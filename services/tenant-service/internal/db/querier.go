@@ -12,26 +12,42 @@ import (
 )
 
 type Querier interface {
+	AddClientToAuditCycle(ctx context.Context, arg AddClientToAuditCycleParams) (AuditCycleClient, error)
+	AssignFrameworkToAuditCycleClient(ctx context.Context, arg AssignFrameworkToAuditCycleClientParams) (AuditCycleFramework, error)
 	AssignFrameworkToClient(ctx context.Context, arg AssignFrameworkToClientParams) (ClientFramework, error)
 	AssignRoleToUser(ctx context.Context, arg AssignRoleToUserParams) error
 	CheckUserPermission(ctx context.Context, arg CheckUserPermissionParams) (bool, error)
 	CountAuditLogs(ctx context.Context) (int64, error)
+	// Count active audit cycles for a specific client
+	CountClientActiveAuditCycles(ctx context.Context, clientID uuid.UUID) (int64, error)
 	CountClientFrameworks(ctx context.Context) (int64, error)
+	// Count total framework assignments across all audit cycles for a client
+	CountClientTotalFrameworkAssignments(ctx context.Context, clientID uuid.UUID) (int64, error)
 	CountClients(ctx context.Context) (int64, error)
 	CountClientsByStatus(ctx context.Context, status NullClientStatusEnum) (int64, error)
 	CountTotalUsers(ctx context.Context) (int64, error)
+	CreateAuditCycle(ctx context.Context, arg CreateAuditCycleParams) (AuditCycle, error)
 	CreateAuditLog(ctx context.Context, arg CreateAuditLogParams) (AuditLog, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateClientBucket(ctx context.Context, arg CreateClientBucketParams) (ClientBucket, error)
 	CreateClientDatabase(ctx context.Context, arg CreateClientDatabaseParams) (ClientDatabase, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteAuditCycle(ctx context.Context, id uuid.UUID) error
+	DeleteAuditCycleFramework(ctx context.Context, id uuid.UUID) error
 	DeleteClient(ctx context.Context, id uuid.UUID) error
 	DeleteClientBucket(ctx context.Context, clientID uuid.UUID) error
 	DeleteClientDatabase(ctx context.Context, clientID uuid.UUID) error
 	DeleteClientFramework(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetAuditCycle(ctx context.Context, id uuid.UUID) (AuditCycle, error)
+	GetAuditCycleClients(ctx context.Context, auditCycleID uuid.UUID) ([]GetAuditCycleClientsRow, error)
+	GetAuditCycleFrameworks(ctx context.Context, auditCycleID uuid.UUID) ([]GetAuditCycleFrameworksRow, error)
+	GetAuditCycleStats(ctx context.Context, id uuid.UUID) (GetAuditCycleStatsRow, error)
 	GetAuditLog(ctx context.Context, id uuid.UUID) (AuditLog, error)
 	GetClient(ctx context.Context, id uuid.UUID) (Client, error)
+	// Client-specific dashboard queries
+	// Get all audit cycles a specific client is enrolled in with framework details
+	GetClientAuditCycleEnrollments(ctx context.Context, clientID uuid.UUID) ([]GetClientAuditCycleEnrollmentsRow, error)
 	GetClientBucket(ctx context.Context, clientID uuid.UUID) (ClientBucket, error)
 	GetClientBucketByName(ctx context.Context, bucketName string) (ClientBucket, error)
 	GetClientByEmail(ctx context.Context, pocEmail string) (Client, error)
@@ -39,6 +55,7 @@ type Querier interface {
 	GetClientDatabase(ctx context.Context, clientID uuid.UUID) (ClientDatabase, error)
 	GetClientDatabaseByName(ctx context.Context, dbName string) (ClientDatabase, error)
 	GetClientFramework(ctx context.Context, id uuid.UUID) (GetClientFrameworkRow, error)
+	GetClientFrameworksInCycle(ctx context.Context, auditCycleClientID uuid.UUID) ([]GetClientFrameworksInCycleRow, error)
 	GetPermission(ctx context.Context, id uuid.UUID) (Permission, error)
 	GetPermissionByName(ctx context.Context, name string) (Permission, error)
 	GetRole(ctx context.Context, id uuid.UUID) (Role, error)
@@ -50,6 +67,8 @@ type Querier interface {
 	GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]Permission, error)
 	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]Role, error)
 	ListActiveClients(ctx context.Context) ([]Client, error)
+	ListAuditCycles(ctx context.Context) ([]AuditCycle, error)
+	ListAuditCyclesByStatus(ctx context.Context, status *string) ([]AuditCycle, error)
 	ListAuditLogs(ctx context.Context, arg ListAuditLogsParams) ([]AuditLog, error)
 	ListAuditLogsByClient(ctx context.Context, arg ListAuditLogsByClientParams) ([]AuditLog, error)
 	ListAuditLogsByResource(ctx context.Context, arg ListAuditLogsByResourceParams) ([]AuditLog, error)
@@ -64,7 +83,10 @@ type Querier interface {
 	ListUsers(ctx context.Context) ([]User, error)
 	ListUsersByClient(ctx context.Context, clientID pgtype.UUID) ([]User, error)
 	ListUsersByRole(ctx context.Context, role UserRoleEnum) ([]User, error)
+	RemoveClientFromAuditCycle(ctx context.Context, arg RemoveClientFromAuditCycleParams) error
 	RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error
+	UpdateAuditCycle(ctx context.Context, arg UpdateAuditCycleParams) (AuditCycle, error)
+	UpdateAuditCycleFrameworkStatus(ctx context.Context, arg UpdateAuditCycleFrameworkStatusParams) (AuditCycleFramework, error)
 	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
 	UpdateClientFrameworkStatus(ctx context.Context, arg UpdateClientFrameworkStatusParams) (ClientFramework, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

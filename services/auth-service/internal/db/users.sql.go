@@ -296,3 +296,19 @@ func (q *Queries) UpdateUserLastLogin(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, UpdateUserLastLogin, id)
 	return err
 }
+
+const CreateUserRole = `-- name: CreateUserRole :exec
+INSERT INTO user_roles (user_id, role_id)
+VALUES ($1, $2)
+`
+
+type CreateUserRoleParams struct {
+	UserID   uuid.UUID   `json:"user_id"`
+	RoleID     uuid.UUID `json:"role_id"`
+	ClientID pgtype.UUID  `json:"client_id"`
+}
+
+func (q *Queries) CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error {
+	_, err := q.db.Exec(ctx, CreateUserRole, arg.UserID, arg.RoleID)
+	return err
+}

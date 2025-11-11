@@ -404,9 +404,10 @@ func (h *Handler) findOrCreateUser(ctx context.Context, userInfo *oidc.UserInfo,
 	// Try to auto-assign client based on email domain
 	var clientID pgtype.UUID
 	emailDomain := extractEmailDomain(userInfo.Email)
-	
+	clientDetails := db.Client{}
 	if emailDomain != "" {
 		client, err := h.store.Queries().GetClientByEmailDomain(ctx, &emailDomain)
+		clientDetails = client
 		if err == nil {
 			// Found matching client, assign it
 			clientID = pgtype.UUID{
@@ -440,6 +441,23 @@ func (h *Handler) findOrCreateUser(ctx context.Context, userInfo *oidc.UserInfo,
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Check if the user is poc of the client, yes them assign poc_client role
+	if clientDetails.PocEmail != nil {
+		if *clientDetails.PocEmail == userInfo.Email {
+			h.store.Queries().CreateUserRole(ctx, db.CreateUserRoleParams{
+				UserID:   createdUser.ID,
+				RoleID:   uuid.MustParse("55555555-5555-5555-5555-555555555555"),
+				ClientID: clientID,
+			})
+		}else{
+			h.store.Queries().CreateUserRole(ctx, db.CreateUserRoleParams{
+				UserID:   createdUser.ID,
+				RoleID:   uuid.MustParse("66666666-6666-6666-6666-666666666666"),
+				ClientID: clientID,
+			})
+		}
 	}
 
 	if clientID.Valid {
@@ -543,15 +561,15 @@ func getVisibleModules(roles []string, designation string) []string {
 	for _, role := range roles {
 		switch role {
 			case "admin":
-				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks"}
+				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks", "Audit Cycles"}
 			case "nishaj_admin":
-				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks"}
+				return []string{"Dashboard", "Clients", "Users", "Roles & Permissions", "Assessments", "Frameworks", "Audit Cycles"}
 			case "auditor":
 				return []string{"Dashboard", "Clients", "Assessments"}
 			case "team_member":
 				return []string{"Dashboard", "Assessments"}
 			case "poc_internal", "poc_client":
-				return []string{"Dashboard", "Assessments"}
+				return []string{"Dashboard", "Audit", "Roles & Permissions"}
 			case "stakeholder":
 				return []string{"Dashboard", "Assessments"}
 			default:

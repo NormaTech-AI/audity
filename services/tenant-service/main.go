@@ -18,6 +18,7 @@ import (
 	"github.com/NormaTech-AI/audity/services/tenant-service/internal/router"
 	"github.com/NormaTech-AI/audity/services/tenant-service/internal/store"
 	"github.com/NormaTech-AI/audity/services/tenant-service/internal/validator"
+	"github.com/NormaTech-AI/audity/services/tenant-service/internal/mail"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/minio/minio-go/v7"
@@ -56,6 +57,9 @@ func main() {
 	}
 
 	log.Infow("Configuration loaded", "env", cfg.Server.Env)
+
+	// Initialize Microsoft Graph API client
+	mail.NewMailService(cfg, log)
 
 	// Initialize database connection pool
 	poolConfig, err := pgxpool.ParseConfig(cfg.Database.TenantDBURL)

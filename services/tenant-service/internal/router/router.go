@@ -17,6 +17,7 @@ func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *st
 	// Global middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.RemoveTrailingSlash())
 
 	// CORS middleware - allow requests from frontend
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -43,6 +44,7 @@ func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *st
 	{
 		tenant.GET("/dashboard", h.GetTenantDashboard)
 		tenant.GET("/dashboard/stats", h.GetTenantDashboardStats)
+		tenant.GET("/dashboard/client/:client_id", h.GetClientDashboard)
 	}
 
 	// Audit management routes (protected, client-specific)
@@ -255,6 +257,114 @@ func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *st
 		)
 	}
 
-	// TODO: Add more route groups with RBAC
-	// users := api.Group("/users")
+	// Audit Cycle management routes (protected)
+	auditCycles := api.Group("/audit-cycles")
+	{
+		// List all audit cycles
+		auditCycles.GET("",
+			h.ListAuditCycles,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:list"),
+		)
+
+		// Create audit cycle
+		auditCycles.POST("",
+			h.CreateAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:create"),
+		)
+
+		// Get specific audit cycle
+		auditCycles.GET("/:id",
+			h.GetAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:read"),
+		)
+
+		// Update audit cycle
+		auditCycles.PUT("/:id",
+			h.UpdateAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:update"),
+		)
+
+		// Delete audit cycle
+		auditCycles.DELETE("/:id",
+			h.DeleteAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:delete"),
+		)
+
+		// Get audit cycle statistics
+		auditCycles.GET("/:id/stats",
+			h.GetAuditCycleStats,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:read"),
+		)
+
+		// Client management within audit cycle
+		auditCycles.GET("/:id/clients",
+			h.GetAuditCycleClients,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:read"),
+		)
+
+		auditCycles.POST("/:id/clients",
+			h.AddClientToAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:manage_clients"),
+		)
+
+		auditCycles.DELETE("/:id/clients/:clientId",
+			h.RemoveClientFromAuditCycle,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:manage_clients"),
+		)
+
+		// Framework management within audit cycle
+		auditCycles.GET("/:id/frameworks",
+			h.GetAuditCycleFrameworks,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:read"),
+		)
+
+		auditCycles.POST("/clients/:cycleClientId/frameworks",
+			h.AssignFrameworkToClient,
+			rbac.PermissionMiddleware(store, logger, "audit_cycles:assign_frameworks"),
+		)
+	}
+
+	// Users management routes (protected)
+	users := api.Group("/users")
+	{
+		// List all users (with optional client_id filter)
+		users.GET("",
+			h.ListUsers,
+			rbac.PermissionMiddleware(store, logger, "users:list"),
+		)
+
+		// Get specific user
+		users.GET("/:id",
+			h.GetUser,
+			rbac.PermissionMiddleware(store, logger, "users:read"),
+		)
+	}
+
+	// Client Audit View routes (for client users to view and submit)
+	clientAudit := api.Group("/client-audit")
+	{
+		// List all audits for authenticated client
+		clientAudit.GET("",
+			h.ListClientAuditsView,
+			rbac.PermissionMiddleware(store, logger, "audit:list"),
+		)
+
+		// Get audit detail with questions (role-based filtering)
+		clientAudit.GET("/:auditId",
+			h.GetClientAuditDetailView,
+			rbac.PermissionMiddleware(store, logger, "audit:read"),
+		)
+
+		// Save submission (create or update draft)
+		clientAudit.POST("/submissions",
+			h.SaveClientSubmission,
+			rbac.PermissionMiddleware(store, logger, "audit:submit"),
+		)
+
+		// Submit answer for review
+		clientAudit.POST("/submissions/:submissionId/submit",
+			h.SubmitClientAnswer,
+			rbac.PermissionMiddleware(store, logger, "audit:submit"),
+		)
+	}
 }

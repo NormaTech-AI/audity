@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  CircleCheckBig,
 } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { Button } from '~/components/ui/button';
@@ -30,12 +31,6 @@ const navItems: NavItem[] = [
     href: '/',
     icon: LayoutDashboard,
   },
-  // {
-  //   title: 'Tenants',
-  //   href: '/tenants',
-  //   icon: Building2,
-  //   permission: 'tenants:list',
-  // },
   {
     title: 'Clients',
     href: '/clients',
@@ -49,6 +44,12 @@ const navItems: NavItem[] = [
     permission: 'users:list',
   },
   {
+    title: 'Audit',
+    href: '/audit',
+    icon: CircleCheckBig,
+    permission: 'audit:list',
+  },
+  {
     title: 'Roles & Permissions',
     href: '/rbac',
     icon: Shield,
@@ -59,6 +60,11 @@ const navItems: NavItem[] = [
     href: '/frameworks',
     icon: BookOpen,
     permission: 'frameworks:list',
+  },
+  {
+    title: 'Audit Cycles',
+    href: '/audit-cycles',
+    icon: CircleCheckBig,
   },
   {
     title: 'Assessments',
@@ -119,7 +125,7 @@ export function Sidebar() {
               return user.visible_modules.includes(item.title);
             }
             // If no visible_modules, show all items (fallback)
-            return true;
+            return false;
           })
           .map((item) => {
             const Icon = item.icon;

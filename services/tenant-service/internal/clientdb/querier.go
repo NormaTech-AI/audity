@@ -13,6 +13,7 @@ import (
 
 type Querier interface {
 	ApproveSubmission(ctx context.Context, arg ApproveSubmissionParams) (Submission, error)
+	AssignQuestionToUser(ctx context.Context, arg AssignQuestionToUserParams) (QuestionAssignment, error)
 	BulkAssignQuestions(ctx context.Context, arg []BulkAssignQuestionsParams) (int64, error)
 	BulkCreateQuestions(ctx context.Context, arg []BulkCreateQuestionsParams) (int64, error)
 	CreateActivityLog(ctx context.Context, arg CreateActivityLogParams) (ActivityLog, error)
@@ -29,6 +30,8 @@ type Querier interface {
 	DeleteQuestion(ctx context.Context, id uuid.UUID) error
 	DeleteQuestionAssignment(ctx context.Context, arg DeleteQuestionAssignmentParams) error
 	DeleteReport(ctx context.Context, id uuid.UUID) error
+	// Get progress for all audits (frameworks) - for dashboard analytics
+	GetAllAuditsProgress(ctx context.Context) ([]GetAllAuditsProgressRow, error)
 	GetAuditByID(ctx context.Context, id uuid.UUID) (Audit, error)
 	GetAuditProgress(ctx context.Context, id uuid.UUID) (GetAuditProgressRow, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
@@ -58,18 +61,24 @@ type Querier interface {
 	ListExternalComments(ctx context.Context, submissionID uuid.UUID) ([]Comment, error)
 	ListInternalComments(ctx context.Context, submissionID uuid.UUID) ([]Comment, error)
 	ListPendingReviews(ctx context.Context) ([]ListPendingReviewsRow, error)
+	ListQuestionAssignments(ctx context.Context, questionID uuid.UUID) ([]QuestionAssignment, error)
 	ListQuestionsByAudit(ctx context.Context, auditID uuid.UUID) ([]Question, error)
 	ListQuestionsBySection(ctx context.Context, arg ListQuestionsBySectionParams) ([]Question, error)
+	// Get questions for a specific user based on their role
+	// POC users see all questions, stakeholders see only assigned questions
+	ListQuestionsForUser(ctx context.Context, arg ListQuestionsForUserParams) ([]ListQuestionsForUserRow, error)
 	ListQuestionsWithSubmissions(ctx context.Context, auditID uuid.UUID) ([]ListQuestionsWithSubmissionsRow, error)
 	ListReportsByStatus(ctx context.Context, status ReportStatusEnum) ([]ListReportsByStatusRow, error)
 	ListSubmissionsByStatus(ctx context.Context, status SubmissionStatusEnum) ([]ListSubmissionsByStatusRow, error)
 	ListSubmissionsByUser(ctx context.Context, submittedBy uuid.UUID) ([]ListSubmissionsByUserRow, error)
+	ListUserAssignments(ctx context.Context, assignedTo uuid.UUID) ([]ListUserAssignmentsRow, error)
 	MarkReportDelivered(ctx context.Context, id uuid.UUID) (Report, error)
 	ReferSubmission(ctx context.Context, arg ReferSubmissionParams) (Submission, error)
 	RejectSubmission(ctx context.Context, arg RejectSubmissionParams) (Submission, error)
 	ResubmitSubmission(ctx context.Context, arg ResubmitSubmissionParams) (Submission, error)
 	SoftDeleteEvidence(ctx context.Context, arg SoftDeleteEvidenceParams) (Evidence, error)
 	SubmitSubmission(ctx context.Context, id uuid.UUID) (Submission, error)
+	UnassignQuestionFromUser(ctx context.Context, arg UnassignQuestionFromUserParams) error
 	UpdateAuditAssignee(ctx context.Context, arg UpdateAuditAssigneeParams) (Audit, error)
 	UpdateAuditStatus(ctx context.Context, arg UpdateAuditStatusParams) (Audit, error)
 	UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error)

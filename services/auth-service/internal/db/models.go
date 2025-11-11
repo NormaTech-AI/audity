@@ -86,6 +86,7 @@ type Client struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`
 	EmailDomain *string   `json:"email_domain"`
+	PocEmail    *string   `json:"poc_email"`
 }
 
 type User struct {

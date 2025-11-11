@@ -17,12 +17,20 @@ type Encryptor struct {
 // NewEncryptor creates a new Encryptor with the given key
 // Key must be 32 bytes for AES-256
 func NewEncryptor(key string) (*Encryptor, error) {
-	if len(key) != 32 {
-		return nil, fmt.Errorf("encryption key must be 32 bytes for AES-256, got %d bytes", len(key))
+	// Accept either a raw 32-byte string or a base64-encoded 32-byte value.
+	if len(key) == 32 {
+		return &Encryptor{key: []byte(key)}, nil
 	}
-	return &Encryptor{
-		key: []byte(key),
-	}, nil
+
+	// Try base64 decoding
+	if decoded, err := base64.StdEncoding.DecodeString(key); err == nil {
+		if len(decoded) == 32 {
+			return &Encryptor{key: decoded}, nil
+		}
+		return nil, fmt.Errorf("encryption key must be 32 bytes for AES-256 after base64 decoding, got %d bytes", len(decoded))
+	}
+
+	return nil, fmt.Errorf("encryption key must be 32 bytes for AES-256; provide a 32-char key or a base64-encoded 32-byte value (got %d chars)", len(key))
 }
 
 // Encrypt encrypts plaintext using AES-256-GCM

@@ -1,20 +1,41 @@
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Users, Shield, TrendingUp } from 'lucide-react';
+import { Building2, Users, Shield, TrendingUp, Calendar, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { api } from '~/api';
 import { useAuth } from '~/contexts/AuthContext';
+import type { ClientDashboardData } from '~/types';
 
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
+  
+  // Check if user is a client user (has client_id)
+  const isClientUser = !!user?.client_id;
 
+  // Tenant dashboard data
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
       const response = await api.dashboard.getTenantDashboardData();
       return response.data;
     },
-    enabled: isAuthenticated, // Only fetch when user is authenticated
+    enabled: isAuthenticated && !isClientUser,
   });
+  
+  // Client-specific dashboard data
+  const { data: clientDashboardData, isLoading: isClientLoading } = useQuery({
+    queryKey: ['client-dashboard', user?.client_id],
+    queryFn: async () => {
+      if (!user?.client_id) return null;
+      const response = await api.dashboard.getClientSpecificDashboard(user.client_id);
+      return response.data;
+    },
+    enabled: isAuthenticated && isClientUser && !!user?.client_id,
+  });
+  
+  // If client user, show client dashboard
+  if (isClientUser) {
+    return <ClientDashboard data={clientDashboardData} isLoading={isClientLoading} user={user} />;
+  }
 
   const stats = [
     // {
@@ -204,5 +225,199 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+  );
+}
+
+// Client Dashboard Component
+function ClientDashboard({ data, isLoading, user }: { data: ClientDashboardData | null | undefined, isLoading: boolean, user: any }) {
+  const companyName = data?.client_name || 'Company';
+  
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{companyName} Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          Welcome back, {user?.name}! Track your audit cycles and compliance progress.
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Audit Cycles</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : data?.stats?.active_audit_cycles || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Currently enrolled cycles
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Framework Assignments</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? '...' : data?.stats?.total_framework_assignments || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total frameworks to complete
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Audit Cycles */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Audit Cycle Enrollments</CardTitle>
+          <CardDescription>Your current and upcoming audit cycles</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : data?.audit_cycles?.length ? (
+            <div className="space-y-6">
+              {data.audit_cycles.map((cycle) => (
+                <div key={cycle.audit_cycle_id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold">{cycle.audit_cycle_name}</h3>
+                      {cycle.audit_cycle_description && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {cycle.audit_cycle_description}
+                        </p>
+                      )}
+                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                        <span>Start: {new Date(cycle.start_date).toLocaleDateString()}</span>
+                        <span>End: {new Date(cycle.end_date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      cycle.cycle_status === 'active'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                    }`}>
+                      {cycle.cycle_status}
+                    </span>
+                  </div>
+                  
+                  {/* Frameworks in this cycle */}
+                  {cycle.frameworks?.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm font-medium">Assigned Frameworks:</p>
+                      <div className="grid gap-2">
+                        {cycle.frameworks.map((framework, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-4 w-4" />
+                              <span className="text-sm">{framework.framework_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {framework.due_date && (
+                                <span className="text-xs text-muted-foreground">
+                                  Due: {new Date(framework.due_date).toLocaleDateString()}
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                framework.framework_status === 'completed'
+                                  ? 'bg-green-100 text-green-800'
+                                  : framework.framework_status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : framework.framework_status === 'overdue'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {framework.framework_status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No audit cycles assigned</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Framework Analytics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Framework Progress Analytics</CardTitle>
+          <CardDescription>Questions answered vs total questions for each framework</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : data?.framework_analytics?.length ? (
+            <div className="space-y-4">
+              {data.framework_analytics.map((analytics) => {
+                const progress = analytics.total_questions > 0 
+                  ? (analytics.answered_questions / analytics.total_questions) * 100 
+                  : 0;
+                
+                return (
+                  <div key={analytics.audit_id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{analytics.framework_name}</h3>
+                        <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                          <span>Due: {new Date(analytics.due_date).toLocaleDateString()}</span>
+                          <span className={`px-2 py-0.5 rounded-full ${
+                            analytics.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : analytics.status === 'in_progress'
+                              ? 'bg-blue-100 text-blue-800'
+                              : analytics.status === 'overdue'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {analytics.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">{Math.round(progress)}%</div>
+                        <p className="text-xs text-muted-foreground">Complete</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Questions Answered</span>
+                        <span className="font-medium">
+                          {analytics.answered_questions} / {analytics.total_questions}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No framework analytics available</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

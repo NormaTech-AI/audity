@@ -208,6 +208,40 @@ func AllUserRoleEnumValues() []UserRoleEnum {
 	}
 }
 
+type AuditCycle struct {
+	ID          uuid.UUID          `json:"id"`
+	Name        string             `json:"name"`
+	Description *string            `json:"description"`
+	StartDate   pgtype.Date        `json:"start_date"`
+	EndDate     pgtype.Date        `json:"end_date"`
+	Status      *string            `json:"status"`
+	CreatedBy   pgtype.UUID        `json:"created_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type AuditCycleClient struct {
+	ID           uuid.UUID          `json:"id"`
+	AuditCycleID uuid.UUID          `json:"audit_cycle_id"`
+	ClientID     uuid.UUID          `json:"client_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+type AuditCycleFramework struct {
+	ID                 uuid.UUID          `json:"id"`
+	AuditCycleClientID uuid.UUID          `json:"audit_cycle_client_id"`
+	FrameworkID        uuid.UUID          `json:"framework_id"`
+	FrameworkName      string             `json:"framework_name"`
+	AssignedBy         pgtype.UUID        `json:"assigned_by"`
+	AssignedAt         pgtype.Timestamptz `json:"assigned_at"`
+	DueDate            pgtype.Date        `json:"due_date"`
+	Status             *string            `json:"status"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	// The auditor assigned to review this framework for the client
+	AuditorID pgtype.UUID `json:"auditor_id"`
+}
+
 type AuditLog struct {
 	ID           uuid.UUID          `json:"id"`
 	UserID       pgtype.UUID        `json:"user_id"`

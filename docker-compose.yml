@@ -78,6 +78,10 @@ services:
       - ./services/framework-service:/app/services/framework-service
     environment:
       TENANT_DB_URL: "postgres://root:password@postgres:5432/tenant_db?sslmode=disable"
+      AUDITY_MICROSOFT_MAIL_TENANT_ID: "${MICROSOFT_MAIL_TENANT_ID}"
+      AUDITY_MICROSOFT_MAIL_CLIENT_ID: "${MICROSOFT_MAIL_CLIENT_ID}"
+      AUDITY_MICROSOFT_MAIL_CLIENT_SECRET: "${MICROSOFT_MAIL_CLIENT_SECRET}"
+      AUDITY_MICROSOFT_MAIL_SENDER_EMAIL: "${MICROSOFT_MAIL_SENDER_EMAIL}"
     depends_on:
       - postgres
       - rabbitmq

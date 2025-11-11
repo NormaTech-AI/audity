@@ -10,7 +10,7 @@ import (
 )
 
 const GetClientByEmailDomain = `-- name: GetClientByEmailDomain :one
-SELECT id, name, email_domain
+SELECT id, name, email_domain, poc_email
 FROM clients
 WHERE email_domain = $1
 LIMIT 1
@@ -19,6 +19,6 @@ LIMIT 1
 func (q *Queries) GetClientByEmailDomain(ctx context.Context, emailDomain *string) (Client, error) {
 	row := q.db.QueryRow(ctx, GetClientByEmailDomain, emailDomain)
 	var i Client
-	err := row.Scan(&i.ID, &i.Name, &i.EmailDomain)
+	err := row.Scan(&i.ID, &i.Name, &i.EmailDomain, &i.PocEmail)
 	return i, err
 }

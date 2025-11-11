@@ -39,3 +39,4 @@ yarn-error.log*
 
 example-frontend
 example-monolithic-backend
+config.yaml

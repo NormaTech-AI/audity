@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	github.com/NormaTech-AI/audity/packages/go/auth v0.0.0
+	github.com/NormaTech-AI/audity/packages/go/microsoft-mail v0.0.0
 	github.com/NormaTech-AI/audity/packages/go/rbac v0.0.0
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/golang-migrate/migrate/v4 v4.19.0
@@ -19,6 +20,7 @@ require (
 
 replace (
 	github.com/NormaTech-AI/audity/packages/go/auth => ../../packages/go/auth
+	github.com/NormaTech-AI/audity/packages/go/microsoft-mail => ../../packages/go/microsoft-mail
 	github.com/NormaTech-AI/audity/packages/go/rbac => ../../packages/go/rbac
 )
 

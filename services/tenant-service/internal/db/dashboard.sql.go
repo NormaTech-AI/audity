@@ -7,6 +7,9 @@ package db
 
 import (
 	"context"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const CountAuditLogs = `-- name: CountAuditLogs :one
@@ -15,6 +18,21 @@ SELECT COUNT(*) FROM audit_logs
 
 func (q *Queries) CountAuditLogs(ctx context.Context) (int64, error) {
 	row := q.db.QueryRow(ctx, CountAuditLogs)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const CountClientActiveAuditCycles = `-- name: CountClientActiveAuditCycles :one
+SELECT COUNT(DISTINCT ac.id)
+FROM audit_cycle_clients acc
+JOIN audit_cycles ac ON acc.audit_cycle_id = ac.id
+WHERE acc.client_id = $1 AND ac.status = 'active'
+`
+
+// Count active audit cycles for a specific client
+func (q *Queries) CountClientActiveAuditCycles(ctx context.Context, clientID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, CountClientActiveAuditCycles, clientID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -31,6 +49,21 @@ func (q *Queries) CountClientFrameworks(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const CountClientTotalFrameworkAssignments = `-- name: CountClientTotalFrameworkAssignments :one
+SELECT COUNT(acf.id)
+FROM audit_cycle_clients acc
+LEFT JOIN audit_cycle_frameworks acf ON acc.id = acf.audit_cycle_client_id
+WHERE acc.client_id = $1
+`
+
+// Count total framework assignments across all audit cycles for a client
+func (q *Queries) CountClientTotalFrameworkAssignments(ctx context.Context, clientID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, CountClientTotalFrameworkAssignments, clientID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const CountTotalUsers = `-- name: CountTotalUsers :one
 SELECT COUNT(*) FROM users
 `
@@ -40,4 +73,82 @@ func (q *Queries) CountTotalUsers(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const GetClientAuditCycleEnrollments = `-- name: GetClientAuditCycleEnrollments :many
+
+SELECT 
+    ac.id as audit_cycle_id,
+    ac.name as audit_cycle_name,
+    ac.description as audit_cycle_description,
+    ac.start_date,
+    ac.end_date,
+    ac.status as cycle_status,
+    acc.id as enrollment_id,
+    acc.created_at as enrolled_at,
+    acf.id as framework_assignment_id,
+    acf.framework_id,
+    acf.framework_name,
+    acf.due_date,
+    acf.status as framework_status,
+    acf.auditor_id
+FROM audit_cycle_clients acc
+JOIN audit_cycles ac ON acc.audit_cycle_id = ac.id
+LEFT JOIN audit_cycle_frameworks acf ON acc.id = acf.audit_cycle_client_id
+WHERE acc.client_id = $1
+ORDER BY ac.start_date DESC, acf.framework_name ASC
+`
+
+type GetClientAuditCycleEnrollmentsRow struct {
+	AuditCycleID          uuid.UUID          `json:"audit_cycle_id"`
+	AuditCycleName        string             `json:"audit_cycle_name"`
+	AuditCycleDescription *string            `json:"audit_cycle_description"`
+	StartDate             pgtype.Date        `json:"start_date"`
+	EndDate               pgtype.Date        `json:"end_date"`
+	CycleStatus           *string            `json:"cycle_status"`
+	EnrollmentID          uuid.UUID          `json:"enrollment_id"`
+	EnrolledAt            pgtype.Timestamptz `json:"enrolled_at"`
+	FrameworkAssignmentID pgtype.UUID        `json:"framework_assignment_id"`
+	FrameworkID           pgtype.UUID        `json:"framework_id"`
+	FrameworkName         *string            `json:"framework_name"`
+	DueDate               pgtype.Date        `json:"due_date"`
+	FrameworkStatus       *string            `json:"framework_status"`
+	AuditorID             pgtype.UUID        `json:"auditor_id"`
+}
+
+// Client-specific dashboard queries
+// Get all audit cycles a specific client is enrolled in with framework details
+func (q *Queries) GetClientAuditCycleEnrollments(ctx context.Context, clientID uuid.UUID) ([]GetClientAuditCycleEnrollmentsRow, error) {
+	rows, err := q.db.Query(ctx, GetClientAuditCycleEnrollments, clientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetClientAuditCycleEnrollmentsRow{}
+	for rows.Next() {
+		var i GetClientAuditCycleEnrollmentsRow
+		if err := rows.Scan(
+			&i.AuditCycleID,
+			&i.AuditCycleName,
+			&i.AuditCycleDescription,
+			&i.StartDate,
+			&i.EndDate,
+			&i.CycleStatus,
+			&i.EnrollmentID,
+			&i.EnrolledAt,
+			&i.FrameworkAssignmentID,
+			&i.FrameworkID,
+			&i.FrameworkName,
+			&i.DueDate,
+			&i.FrameworkStatus,
+			&i.AuditorID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

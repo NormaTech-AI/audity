@@ -1,5 +1,5 @@
 -- name: CreateUser :one
-INSERT INTO users (email, name, oidc_provider, oidc_sub, role, client_id)
+INSERT INTO users (email, name, oidc_provider, oidc_sub, designation, client_id)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
@@ -19,6 +19,11 @@ WHERE oidc_provider = $1 AND oidc_sub = $2 LIMIT 1;
 SELECT * FROM users
 ORDER BY created_at DESC;
 
+-- name: ListTenantUsers :many
+SELECT * FROM users
+WHERE client_id IS NULL
+ORDER BY created_at DESC;
+
 -- name: ListUsersByClient :many
 SELECT * FROM users
 WHERE client_id = $1
@@ -26,12 +31,12 @@ ORDER BY created_at DESC;
 
 -- name: ListUsersByRole :many
 SELECT * FROM users
-WHERE role = $1
+WHERE designation = $1
 ORDER BY created_at DESC;
 
 -- name: UpdateUser :one
 UPDATE users
-SET name = $2, email = $3, role = $4
+SET name = $2, email = $3, designation = $4
 WHERE id = $1
 RETURNING *;
 

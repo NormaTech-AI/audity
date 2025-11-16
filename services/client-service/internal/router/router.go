@@ -1,14 +1,14 @@
 package router
 
 import (
-	"github.com/NormaTech-AI/audity/packages/go/auth"
-	"github.com/NormaTech-AI/audity/services/client-service/internal/config"
-	"github.com/NormaTech-AI/audity/services/client-service/internal/handler"
-	"github.com/NormaTech-AI/audity/packages/go/rbac"
-	"github.com/NormaTech-AI/audity/services/client-service/internal/store"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"go.uber.org/zap"
+    "github.com/NormaTech-AI/audity/packages/go/auth"
+    "github.com/NormaTech-AI/audity/services/client-service/internal/config"
+    "github.com/NormaTech-AI/audity/services/client-service/internal/handler"
+    "github.com/NormaTech-AI/audity/packages/go/rbac"
+    "github.com/NormaTech-AI/audity/services/client-service/internal/store"
+    "github.com/labstack/echo/v4"
+    "github.com/labstack/echo/v4/middleware"
+    "go.uber.org/zap"
 )
 
 // SetupRoutes configures all routes for the application
@@ -68,4 +68,32 @@ func SetupRoutes(e *echo.Echo, h *handler.Handler, cfg *config.Config, store *st
 		clients.PUT("/:id", h.UpdateClient, rbac.PermissionMiddleware(store, logger, "clients:update"))
 		// clients.DELETE("/:id", h.DeleteClient, rbac.PermissionMiddleware(store, logger, "clients:delete"))
 	}
+
+    // Client Audit routes (protected)
+    clientAudit := api.Group("/client-audit")
+    {
+        // List audits assigned to client user
+        clientAudit.GET("",
+            h.ListClientAudits,
+            rbac.RequireAnyPermission(store, logger, "audits:list", "audits:read"),
+        )
+
+        // Get audit detail with questions (role-based visibility)
+        clientAudit.GET(":auditId",
+            h.GetClientAuditDetail,
+            rbac.PermissionMiddleware(store, logger, "audits:read"),
+        )
+
+        // Save submission (draft)
+        clientAudit.POST("/submissions",
+            h.SaveClientSubmission,
+            rbac.PermissionMiddleware(store, logger, "audits:submit"),
+        )
+
+        // Submit answer for review
+        clientAudit.POST("/submissions/:submissionId/submit",
+            h.SubmitClientAnswer,
+            rbac.PermissionMiddleware(store, logger, "audits:submit"),
+        )
+    }
 }

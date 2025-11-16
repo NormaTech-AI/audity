@@ -109,19 +109,19 @@ export default function EditFrameworkPage() {
     e.preventDefault();
 
     if (!name || !description || !version) {
-      alert('Please fill in all required fields');
+      setInitialLoading(false);
       return;
     }
 
     if (questions.length === 0) {
-      alert('Please add at least one question');
+      setInitialLoading(false);
       return;
     }
 
     // Validate all questions have required fields
     const invalidQuestion = questions.find(q => !q.control_id || !q.question_text);
     if (invalidQuestion) {
-      alert('Please fill in control_id and question_text for all questions');
+      setInitialLoading(false);
       return;
     }
 
@@ -136,7 +136,7 @@ export default function EditFrameworkPage() {
       navigate(`/frameworks/${id}`);
     } catch (err: any) {
       console.error('Failed to update framework:', err);
-      alert(err.response?.data?.error || 'Failed to update framework');
+      setInitialLoading(false);
     } finally {
       setLoading(false);
     }

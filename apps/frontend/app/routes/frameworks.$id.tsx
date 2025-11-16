@@ -72,7 +72,7 @@ export default function FrameworkDetailPage() {
       navigate('/frameworks');
     } catch (err: any) {
       console.error('Failed to delete framework:', err);
-      alert(err.response?.data?.error || 'Failed to delete framework');
+      setError(err.response?.data?.error || 'Failed to delete framework');
     }
   };
 
@@ -89,7 +89,7 @@ export default function FrameworkDetailPage() {
   if (error || !framework) {
     return (
       <div className="container mx-auto py-6">
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error || 'Framework not found'}</p>
             <Link to="/frameworks">

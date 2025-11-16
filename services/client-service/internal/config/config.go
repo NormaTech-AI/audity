@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	MinIO    MinIOConfig    `mapstructure:"minio"`
-	Auth     AuthConfig     `mapstructure:"auth"`
-	Logging  LoggingConfig  `mapstructure:"logging"`
+    Server   ServerConfig   `mapstructure:"server"`
+    Database DatabaseConfig `mapstructure:"database"`
+    MinIO    MinIOConfig    `mapstructure:"minio"`
+    Auth     AuthConfig     `mapstructure:"auth"`
+    Logging  LoggingConfig  `mapstructure:"logging"`
+    Services ServicesConfig `mapstructure:"services"`
 }
 
 type ServerConfig struct {
@@ -42,8 +43,12 @@ type AuthConfig struct {
 }
 
 type LoggingConfig struct {
-	Level  string `mapstructure:"level"`
-	Format string `mapstructure:"format"`
+    Level  string `mapstructure:"level"`
+    Format string `mapstructure:"format"`
+}
+
+type ServicesConfig struct {
+    TenantBaseURL string `mapstructure:"tenant_base_url"`
 }
 
 func LoadConfig(configPath string) (*Config, error) {

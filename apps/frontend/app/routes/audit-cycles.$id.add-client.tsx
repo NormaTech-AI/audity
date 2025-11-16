@@ -85,7 +85,7 @@ export default function AddClientToAuditCyclePage() {
 
   const handleAddClients = async () => {
     if (selectedClients.size === 0) {
-      alert('Please select at least one client');
+      setError('Please select at least one client');
       return;
     }
 
@@ -128,7 +128,7 @@ export default function AddClientToAuditCyclePage() {
   if (error && !cycle) {
     return (
       <div className="container mx-auto py-6">
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>
@@ -158,7 +158,7 @@ export default function AddClientToAuditCyclePage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>

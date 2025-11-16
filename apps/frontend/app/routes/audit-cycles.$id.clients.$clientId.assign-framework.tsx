@@ -108,7 +108,7 @@ export default function AssignFrameworkPage() {
 
   const handleAssignFrameworks = async () => {
     if (selectedFrameworks.size === 0) {
-      alert('Please select at least one framework');
+      setError('Please select at least one framework');
       return;
     }
 
@@ -159,7 +159,7 @@ export default function AssignFrameworkPage() {
   if (error && !cycle) {
     return (
       <div className="container mx-auto py-6">
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>
@@ -189,7 +189,7 @@ export default function AssignFrameworkPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>

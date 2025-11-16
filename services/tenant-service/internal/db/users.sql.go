@@ -13,18 +13,18 @@ import (
 )
 
 const CreateUser = `-- name: CreateUser :one
-INSERT INTO users (email, name, oidc_provider, oidc_sub, role, client_id)
+INSERT INTO users (email, name, oidc_provider, oidc_sub, designation, client_id)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login
+RETURNING id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login
 `
 
 type CreateUserParams struct {
-	Email        string       `json:"email"`
-	Name         string       `json:"name"`
-	OidcProvider string       `json:"oidc_provider"`
-	OidcSub      string       `json:"oidc_sub"`
-	Role         UserRoleEnum `json:"role"`
-	ClientID     pgtype.UUID  `json:"client_id"`
+	Email        string      `json:"email"`
+	Name         string      `json:"name"`
+	OidcProvider string      `json:"oidc_provider"`
+	OidcSub      string      `json:"oidc_sub"`
+	Designation  string      `json:"designation"`
+	ClientID     pgtype.UUID `json:"client_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -33,7 +33,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Name,
 		arg.OidcProvider,
 		arg.OidcSub,
-		arg.Role,
+		arg.Designation,
 		arg.ClientID,
 	)
 	var i User
@@ -43,7 +43,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Name,
 		&i.OidcProvider,
 		&i.OidcSub,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -63,7 +63,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const GetUser = `-- name: GetUser :one
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -76,7 +76,7 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Name,
 		&i.OidcProvider,
 		&i.OidcSub,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -86,7 +86,7 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const GetUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -99,7 +99,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Name,
 		&i.OidcProvider,
 		&i.OidcSub,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -109,7 +109,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const GetUserByOIDC = `-- name: GetUserByOIDC :one
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
 WHERE oidc_provider = $1 AND oidc_sub = $2 LIMIT 1
 `
 
@@ -127,7 +127,7 @@ func (q *Queries) GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (U
 		&i.Name,
 		&i.OidcProvider,
 		&i.OidcSub,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -136,8 +136,45 @@ func (q *Queries) GetUserByOIDC(ctx context.Context, arg GetUserByOIDCParams) (U
 	return i, err
 }
 
+const ListTenantUsers = `-- name: ListTenantUsers :many
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
+WHERE client_id IS NULL
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListTenantUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, ListTenantUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Name,
+			&i.OidcProvider,
+			&i.OidcSub,
+			&i.Designation,
+			&i.ClientID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastLogin,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ListUsers = `-- name: ListUsers :many
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
 ORDER BY created_at DESC
 `
 
@@ -156,7 +193,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Name,
 			&i.OidcProvider,
 			&i.OidcSub,
-			&i.Role,
+			&i.Designation,
 			&i.ClientID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -173,7 +210,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 }
 
 const ListUsersByClient = `-- name: ListUsersByClient :many
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
 WHERE client_id = $1
 ORDER BY created_at DESC
 `
@@ -193,7 +230,7 @@ func (q *Queries) ListUsersByClient(ctx context.Context, clientID pgtype.UUID) (
 			&i.Name,
 			&i.OidcProvider,
 			&i.OidcSub,
-			&i.Role,
+			&i.Designation,
 			&i.ClientID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -210,13 +247,13 @@ func (q *Queries) ListUsersByClient(ctx context.Context, clientID pgtype.UUID) (
 }
 
 const ListUsersByRole = `-- name: ListUsersByRole :many
-SELECT id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login FROM users
-WHERE role = $1
+SELECT id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login FROM users
+WHERE designation = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListUsersByRole(ctx context.Context, role UserRoleEnum) ([]User, error) {
-	rows, err := q.db.Query(ctx, ListUsersByRole, role)
+func (q *Queries) ListUsersByRole(ctx context.Context, designation string) ([]User, error) {
+	rows, err := q.db.Query(ctx, ListUsersByRole, designation)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +267,7 @@ func (q *Queries) ListUsersByRole(ctx context.Context, role UserRoleEnum) ([]Use
 			&i.Name,
 			&i.OidcProvider,
 			&i.OidcSub,
-			&i.Role,
+			&i.Designation,
 			&i.ClientID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -248,16 +285,16 @@ func (q *Queries) ListUsersByRole(ctx context.Context, role UserRoleEnum) ([]Use
 
 const UpdateUser = `-- name: UpdateUser :one
 UPDATE users
-SET name = $2, email = $3, role = $4
+SET name = $2, email = $3, designation = $4
 WHERE id = $1
-RETURNING id, email, name, oidc_provider, oidc_sub, role, client_id, created_at, updated_at, last_login
+RETURNING id, email, name, oidc_provider, oidc_sub, designation, client_id, created_at, updated_at, last_login
 `
 
 type UpdateUserParams struct {
-	ID    uuid.UUID    `json:"id"`
-	Name  string       `json:"name"`
-	Email string       `json:"email"`
-	Role  UserRoleEnum `json:"role"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Email       string    `json:"email"`
+	Designation string    `json:"designation"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
@@ -265,7 +302,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.ID,
 		arg.Name,
 		arg.Email,
-		arg.Role,
+		arg.Designation,
 	)
 	var i User
 	err := row.Scan(
@@ -274,7 +311,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Name,
 		&i.OidcProvider,
 		&i.OidcSub,
-		&i.Role,
+		&i.Designation,
 		&i.ClientID,
 		&i.CreatedAt,
 		&i.UpdatedAt,

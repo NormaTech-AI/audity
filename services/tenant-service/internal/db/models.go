@@ -320,7 +320,7 @@ type User struct {
 	Name         string             `json:"name"`
 	OidcProvider string             `json:"oidc_provider"`
 	OidcSub      string             `json:"oidc_sub"`
-	Role         UserRoleEnum       `json:"role"`
+	Designation  string             `json:"designation"`
 	ClientID     pgtype.UUID        `json:"client_id"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`

@@ -65,7 +65,7 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     oidc_provider VARCHAR(50) NOT NULL, -- 'google' or 'microsoft'
     oidc_sub VARCHAR(255) NOT NULL, -- Subject from OIDC provider
-    role user_role_enum NOT NULL,
+    designation VARCHAR(255) NOT NULL,
     client_id UUID REFERENCES clients(id) ON DELETE CASCADE, -- NULL for Nishaj internal users
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

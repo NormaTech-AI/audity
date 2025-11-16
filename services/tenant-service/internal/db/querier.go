@@ -80,9 +80,10 @@ type Querier interface {
 	ListFrameworksByStatus(ctx context.Context, status NullAuditStatusEnum) ([]ListFrameworksByStatusRow, error)
 	ListPermissions(ctx context.Context) ([]Permission, error)
 	ListRoles(ctx context.Context) ([]Role, error)
+	ListTenantUsers(ctx context.Context) ([]User, error)
 	ListUsers(ctx context.Context) ([]User, error)
 	ListUsersByClient(ctx context.Context, clientID pgtype.UUID) ([]User, error)
-	ListUsersByRole(ctx context.Context, role UserRoleEnum) ([]User, error)
+	ListUsersByRole(ctx context.Context, designation string) ([]User, error)
 	RemoveClientFromAuditCycle(ctx context.Context, arg RemoveClientFromAuditCycleParams) error
 	RemoveRoleFromUser(ctx context.Context, arg RemoveRoleFromUserParams) error
 	UpdateAuditCycle(ctx context.Context, arg UpdateAuditCycleParams) (AuditCycle, error)

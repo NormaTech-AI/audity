@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Download } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -22,6 +22,8 @@ export default function NewFrameworkPage() {
   const [description, setDescription] = useState('');
   const [version, setVersion] = useState('1.0');
   const [questions, setQuestions] = useState<FrameworkQuestion[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const addQuestion = () => {
     setQuestions([
@@ -74,19 +76,19 @@ export default function NewFrameworkPage() {
     e.preventDefault();
 
     if (!name || !description || !version) {
-      alert('Please fill in all required fields');
+      setUploadError('Please fill in all required fields');
       return;
     }
 
     if (questions.length === 0) {
-      alert('Please add at least one question');
+      setUploadError('Please add at least one question');
       return;
     }
 
     // Validate all questions have required fields
     const invalidQuestion = questions.find(q => !q.control_id || !q.question_text);
     if (invalidQuestion) {
-      alert('Please fill in control_id and question_text for all questions');
+      setUploadError('Please fill in control_id and question_text for all questions');
       return;
     }
 
@@ -101,10 +103,98 @@ export default function NewFrameworkPage() {
       navigate('/frameworks');
     } catch (err: any) {
       console.error('Failed to create framework:', err);
-      alert(err.response?.data?.error || 'Failed to create framework');
+      setUploadError(err.response?.data?.error || 'Failed to create framework');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const XLSX = await import('xlsx');
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let wb;
+      if (ext === 'csv') {
+        const text = await file.text();
+        wb = XLSX.read(text, { type: 'string' });
+      } else {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('File too large (max 5MB)');
+        }
+        const arrayBuffer = await file.arrayBuffer();
+        wb = XLSX.read(arrayBuffer, { type: 'array' });
+      }
+      if (!wb.SheetNames?.length) {
+        setUploadError('No sheets found in file');
+        return;
+      }
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      if (!sheet) {
+        setUploadError('Could not read first sheet');
+        return;
+      }
+      const rows = XLSX.utils.sheet_to_json<any>(sheet, { defval: '' });
+      if (rows.length > 2000) {
+        setUploadError('File has too many rows (max 2000)');
+        return;
+      }
+
+      const parsed: FrameworkQuestion[] = rows.map((row: any, idx: number) => {
+        const section = String(row['Section'] || row['section'] || '').trim();
+        const control = String(row['Control ID'] || row['control_id'] || '').trim();
+        const text = String(row['Question Text'] || row['question_text'] || '').trim();
+        const help = String(row['Help Text'] || row['help_text'] || '').trim();
+        const evidenceRaw = String(row['Acceptable Evidence'] || row['acceptable_evidence'] || '').trim();
+        const evidence = evidenceRaw ? Array.from(new Set(evidenceRaw.split(',').map((s) => s.trim()).filter(Boolean))) : [];
+
+        if (!control || !text) {
+          console.warn(`Row ${idx + 2} missing control_id or question_text`);
+        }
+
+        return {
+          section_title: section,
+          control_id: control,
+          question_text: text,
+          help_text: help || undefined,
+          acceptable_evidence: evidence,
+        } as FrameworkQuestion;
+      });
+
+      if (parsed.length === 0) {
+        setUploadError('No rows parsed. Please check template headers.');
+      } else {
+        setQuestions(parsed);
+      }
+    } catch (err: any) {
+      console.error('Failed to parse spreadsheet:', err);
+      setUploadError(err?.message || 'Failed to parse file');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['Section','Control ID','Question Text','Help Text','Acceptable Evidence'];
+    const sample = [
+      ['Access Control','AC-1','Establish access control policy','Provide link to policy','policy, logs'],
+      ['Access Control','AC-2','User account provisioning documented','','tickets, approvals']
+    ];
+    const csv = [headers, ...sample]
+      .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'framework-questions-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -170,6 +260,43 @@ export default function NewFrameworkPage() {
               Add Question
             </Button>
           </div>
+
+          {/* Upload & Guide */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Bulk Upload via Excel/CSV</CardTitle>
+              <CardDescription>Import questions from a spreadsheet</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleExcelUpload}
+                />
+                <Button type="button" variant="outline" onClick={handleDownloadTemplate}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Template
+                </Button>
+                {uploading && (
+                  <span className="text-muted-foreground" role="status" aria-live="polite">Parsing file...</span>
+                )}
+              </div>
+              {uploadError && (
+                <div className="text-destructive text-sm" role="alert">{uploadError}</div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium">Expected columns (first row as headers):</p>
+                <ul className="list-disc ml-6 mt-2">
+                  <li>Section (string)</li>
+                  <li>Control ID (string, required)</li>
+                  <li>Question Text (string, required)</li>
+                  <li>Help Text (string, optional)</li>
+                  <li>Acceptable Evidence (comma-separated strings)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
 
           {questions.map((question, questionIndex) => (
             <Card key={questionIndex}>

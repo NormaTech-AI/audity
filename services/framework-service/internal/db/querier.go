@@ -14,7 +14,7 @@ type Querier interface {
 	BulkCreateFrameworkQuestions(ctx context.Context, arg []BulkCreateFrameworkQuestionsParams) (int64, error)
 	CountFrameworkQuestions(ctx context.Context, frameworkID uuid.UUID) (int64, error)
 	CountFrameworks(ctx context.Context) (int64, error)
-	CreateFramework(ctx context.Context, arg CreateFrameworkParams) (ComplianceFramework, error)
+	CreateFramework(ctx context.Context, arg CreateFrameworkParams) (CreateFrameworkRow, error)
 	CreateFrameworkQuestion(ctx context.Context, arg CreateFrameworkQuestionParams) (FrameworkQuestion, error)
 	DeleteFramework(ctx context.Context, id uuid.UUID) error
 	DeleteFrameworkQuestion(ctx context.Context, questionID uuid.UUID) error

@@ -56,7 +56,7 @@ export default function FrameworksPage() {
       setFrameworks(frameworks.filter((f) => f.id !== id));
     } catch (err: any) {
       console.error('Failed to delete framework:', err);
-      alert(err.response?.data?.error || 'Failed to delete framework');
+      setError(err.response?.data?.error || 'Failed to delete framework');
     }
   };
 

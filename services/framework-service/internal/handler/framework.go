@@ -10,13 +10,13 @@ import (
 
 // FrameworkResponse represents a framework in API responses
 type FrameworkResponse struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Description    string `json:"description"`
-	Version        string `json:"version"`
-	QuestionCount  int    `json:"question_count,omitempty"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Version       string `json:"version"`
+	QuestionCount int    `json:"question_count,omitempty"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
 }
 
 // FrameworkQuestionRequest represents a question in the request
@@ -30,18 +30,18 @@ type FrameworkQuestionRequest struct {
 
 // CreateFrameworkRequest represents the request to create a framework
 type CreateFrameworkRequest struct {
-	Name        string                      `json:"name" validate:"required"`
-	Description string                      `json:"description" validate:"required"`
-	Version     string                      `json:"version" validate:"required"`
-	Questions   []FrameworkQuestionRequest  `json:"questions" validate:"required,min=1"`
+	Name        string                     `json:"name" validate:"required"`
+	Description string                     `json:"description" validate:"required"`
+	Version     string                     `json:"version" validate:"required"`
+	Questions   []FrameworkQuestionRequest `json:"questions" validate:"required,min=1"`
 }
 
 // UpdateFrameworkRequest represents the request to update a framework
 type UpdateFrameworkRequest struct {
-	Name        string                      `json:"name" validate:"required"`
-	Description string                      `json:"description" validate:"required"`
-	Version     string                      `json:"version" validate:"required"`
-	Questions   []FrameworkQuestionRequest  `json:"questions" validate:"required,min=1"`
+	Name        string                     `json:"name" validate:"required"`
+	Description string                     `json:"description" validate:"required"`
+	Version     string                     `json:"version" validate:"required"`
+	Questions   []FrameworkQuestionRequest `json:"questions" validate:"required,min=1"`
 }
 
 // ListFrameworks returns all compliance frameworks
@@ -110,7 +110,7 @@ func (h *Handler) ListFrameworks(c echo.Context) error {
 // @Router /api/v1/frameworks/{id} [get]
 func (h *Handler) GetFramework(c echo.Context) error {
 	ctx := c.Request().Context()
-	
+
 	frameworkID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -182,10 +182,11 @@ func (h *Handler) CreateFramework(c echo.Context) error {
 		})
 	}
 
+	// Ensure checklist_json has a default empty object; future could build from questions
 	framework, err := h.store.CreateFramework(ctx, db.CreateFrameworkParams{
-		Name:          req.Name,
-		Description:   &req.Description,
-		Version:       &req.Version,
+		Name:        req.Name,
+		Description: &req.Description,
+		Version:     &req.Version,
 	})
 	if err != nil {
 		h.logger.Errorw("Failed to create framework", "error", err)
@@ -273,10 +274,10 @@ func (h *Handler) UpdateFramework(c echo.Context) error {
 	}
 
 	framework, err := h.store.UpdateFramework(ctx, db.UpdateFrameworkParams{
-		ID:            frameworkID,
-		Name:          req.Name,
-		Description:   &req.Description,
-		Version:       &req.Version,
+		ID:          frameworkID,
+		Name:        req.Name,
+		Description: &req.Description,
+		Version:     &req.Version,
 	})
 	if err != nil {
 		h.logger.Errorw("Failed to update framework", "error", err, "id", frameworkID)

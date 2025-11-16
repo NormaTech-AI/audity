@@ -56,7 +56,7 @@ export default function AuditCyclesPage() {
       setAuditCycles(auditCycles.filter((ac) => ac.id !== id));
     } catch (err: any) {
       console.error('Failed to delete audit cycle:', err);
-      alert(err.response?.data?.error || 'Failed to delete audit cycle');
+      setError(err.response?.data?.error || 'Failed to delete audit cycle');
     }
   };
 
@@ -113,7 +113,7 @@ export default function AuditCyclesPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="border-destructive">
+        <Card className="border-destructive" role="alert">
           <CardContent className="pt-6">
             <p className="text-destructive">{error}</p>
           </CardContent>

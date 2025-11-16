@@ -4,6 +4,7 @@ import axios, { type AxiosResponse, type AxiosError } from "axios";
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   withCredentials: true, // Use HTTP-only cookies for auth
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -13,6 +14,17 @@ export const apiClient = axios.create({
 // Request interceptor to add Authorization header
 apiClient.interceptors.request.use(
   (config) => {
+    try {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          config.headers = config.headers ?? {};
+          if (!config.headers['Authorization']) {
+            (config.headers as any)['Authorization'] = `Bearer ${token}`;
+          }
+        }
+      }
+    } catch {}
     return config;
   },
   (error) => Promise.reject(error)
@@ -39,9 +51,8 @@ apiClient.interceptors.response.use(
         // Retry original request
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login (only on client-side)
         if (typeof window !== 'undefined' && !window.location.href.includes("/login")) {
-          // window.location.href = '/login';
+          window.location.href = '/login';
         }
         return Promise.reject(refreshError);
       }
